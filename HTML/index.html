@@ -1,77 +1,261 @@
 <!DOCTYPE html>
 <html>
-<body>
-<img src="utlogo.png">
-<h1>Admin Panel</h1>
-<form method="POST" action="index.html">
-<label for="consolecommand">Console command: </label>
-<input type="text" name="consolecommand" value="" />
-<input type="submit" />
-</form>
-
-<br>
-<br>
-
-<div id="serverinfo"></div>
-<br>
-<div id="playertable"></div>
-
-<script language="javascript">
-	
-	// debug preview variables to check html	
-	var serverinfo = { mapname:"MP_NickTest1", timeremaining:860, goalscore:10, Players:[{name:"PeteNub",score:10,kills:10,deaths:10}, {name:"BarkTooth",score:1,kills:1,deaths:50}], maprotation:["DM-NickTest1","DM-Circuit"] };
-	
-	var xmlhttp = new XMLHttpRequest();
-	xmlhttp.onreadystatechange = function()
-	{
-		if (xmlhttp.readyState == 4 && (xmlhttp.status == 220 || xmlhttp.status == 200))
-		{
-			serverinfo = JSON.parse(xmlhttp.responseText);
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>HTTP Admin</title>
+		<style type="text/css">
+		
+			body{
+				margin:0;
+				padding:0;
+				font-family: Sans-Serif;
+				line-height: 1.5em;
+			}
 			
-			document.getElementById('playertable').innerHTML = generatePlayerTable();
-			document.getElementById('serverinfo').innerHTML = generateServerInfo();
-		}
-	}
-	xmlhttp.open("GET", "serverinfo.json", true);
-	xmlhttp.send();
+			main {
+				padding-bottom: 10010px;
+				margin-bottom: -10000px;
+				float: left;
+				width: 100%;
+			}
+			
+			#nav {
+				float: left;
+				width: 230px;
+				margin-left: -100%;
+				padding-bottom: 10010px;
+				margin-bottom: -10000px;
+				background: #eee;
+			}
+			
+			#wrapper {
+				overflow: hidden;
+			}
+			
+			#content {
+				margin-left: 230px; /* Same as 'nav' width */
+			}
+			
+			.innertube{
+				margin: 15px; /* Padding for content */
+				margin-top: 0;
+			}
+			
+			p {
+				color: #555;
+			}
+	
+			nav ul {
+				list-style-type: none;
+				margin: 0;
+				padding: 0;
+			}
+			
+			nav ul a {
+				color: #000;
+				text-decoration: none;
+			}
+	
+		</style>
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+	
+<script>
 
-	function generateServerInfo()
-	{
-		var html = "<h2>" + serverinfo.mapname + "</h2>";
-		html += "Time: " + serverinfo.timeremaining + " seconds left<br>";
-		html += "Goal score: " + serverinfo.goalscore + "<br>";
-		
-		html += "<h3>Map Rotation</h3>";
-		for (i in serverinfo.maprotation)
-		{
-			var map = serverinfo.maprotation[i];
-			html += map + "<br>";
-		}
-		
-		return html;
-	}
+function request()
+{
+	var dataString = '{"request":["serverInfo", "players"]}';
 	
-	function generatePlayerTable()
-	{
-		var html = "<h2>Players</h2>";
+		$.ajax({
+			type: "get",
+			url: "http://localhost:8082/serverinfo.json",
+			//data: dataString,
+			cache: false,
+			success: function(data) {
+				handelResponse(data);
+			}
+		});		
+}	
 		
-		html += "<table><tr><th>Name</th><th>Score</th><th>Kills</th><th>Deaths</th><th>Kick?</th><th>Ban?</th></tr>";
 		
-		for (Player in serverinfo.Players)
-		{
-			var PlayerData = serverinfo.Players[Player];
-			html += "<tr><td>" + PlayerData.name + "</td><td>" + PlayerData.score + "</td><td>" + PlayerData.kills + "</td><td>" + PlayerData.deaths + "</td>";
-			// These links should really be POST instead of GET
-			html += "<td><a href=admin.html?kick=" + PlayerData.name + ">Kick</a></td>";
-			html += "<td><a href=admin.html?ban=" + PlayerData.name + ">Ban</a></td>";
-			html +="</tr>";
-		}
-		
-		html += "</table>";
-		return html;
-	}
+function handelResponse(data)		
+{
+	//console.debug(data);
+	var json = data;
+
+	document.getElementById('serverName').innerHTML = '';
+	document.getElementById('serverMOTD').innerHTML = '';
+	document.getElementById('mapName').innerHTML = json.mapname;
+	document.getElementById('gameMode').innerHTML = json.gamemode;
+	document.getElementById('matchState').innerHTML = json.MatchState;
+	document.getElementById('playerCount').innerHTML = '';
+	document.getElementById('maxPlayers').innerHTML = '';
+	document.getElementById('spectatorCount').innerHTML = '';
+	document.getElementById('maxSpectators').innerHTML = '';
 	
+	document.getElementById('timeLimit').innerHTML = timeConvert(json.timelimit);
+	document.getElementById('timeRemaining').innerHTML = timeConvert(json.timeremaining);
+	document.getElementById('goalScore').innerHTML = json.goalscore;
+	
+	document.getElementById('playerTable').innerHTML = generatePlayerTable(json.Players);
+}
+
+function generatePlayerTable(playersJson)
+{
+	var html = "<h2>Players</h2>";
+	
+	html += "<table><tr><th>Name</th><th>Score</th><th>Kills</th><th>Deaths</th><th>Kick?</th><th>Ban?</th></tr>";
+		
+	for (Player in playersJson)
+	{
+		var PlayerData = playersJson[Player];
+		html += "<tr>";
+		html += "<td><a alt=\""+ PlayerData.id +"\">" + PlayerData.name + "</a></td>";
+		html += "<td>" + PlayerData.score + "</td>";
+		html += "<td>" + PlayerData.kills + "</td>";
+		html += "<td>" + PlayerData.deaths + "</td>";
+
+		if (PlayerData.bot == 0)
+		{
+			html += "<td></td>";
+			html += "<td></td>";
+		}
+		else
+		{
+			html += "<td><a herf=\"#\" onclick=\"actionPlayerKick('"+ (PlayerData.id? PlayerData.id : PlayerData.name) +"')\">Kick</a></td>";
+			html += "<td><a herf=\"#\" onclick=\"actionPlayerBan('"+ (PlayerData.id? PlayerData.id : PlayerData.name) +"')\">Ban</a></td>";
+		}
+		html +="</tr>";
+	}
+		
+	html += "</table>";	
+	
+	
+	return html;
+}
+
+function timeConvert(seconds)
+{
+	var date = new Date(1970,0,1);
+    date.setSeconds(seconds);
+    return date.toTimeString().replace(/.*(\d{2}:\d{2}:\d{2}).*/, "$1");
+}
+
+
+function actionPlayerKick(NameOrUID)
+{
+	if (NameOrUID)
+	{
+		var json = '{"action":[{"kick":"'+ NameOrUID +'"}]}';
+		sendAction(json);
+	}
+}
+
+function actionPlayerBan()
+{
+}
+
+function sendAction(data)
+{
+	$.ajax({
+		type: "post",
+		url: "http://localhost:8082/action.json",
+		data: data,
+		cache: false,
+		success: function(data) {
+			document.getElementById('msg').innerHTML = data;
+		}
+	});	
+}
+//setInterval(request, 2000);
+request();
 </script>
+	
+	</head>
+	
+	<body>
+		<div id="wrapper">
+		
+			<main>
+				<div id="content">
+					<div class="innertube">
+					<div id="msg"></div>
+					<div>			
+					<form method="POST" action="action.json">
+					<label for="consolecommand">Console command: </label>
+					<input type="text" name="consolecommand" value="" />
+					<input type="submit" />
+					</form>
+					</div>
+					
+						<h1>Summary</h1>
+						<p> Server Name: <span id="serverName"></span></p>
+						<p> Message of the day <span id="serverMOTD"></span></p>
+						
+						<p> (Below is a live feed, pull every 2 sec)</p>
+						
+						<h2>Dedi Server </h2>
 
-</body>
+						<table border="1" width="100%">
+							<tr>
+								<td width="25%"> <p>Map Img</p> </td>
+								<td> 
+									<p><small>Last Updated: </small></p>
+									<p>Map Name: <span id="mapName"></span> <br />Game Mode: <span id="gameMode"></span></p>
+								
+									<p>Match State: <span id="matchState"></span> <br /> / Score Limit: <span id="goalScore"></span></p>
+									<p>Time Remaining: <span id="timeRemaining"></span> / <span id="timeLimit"></span>
+									<p>
+										Players: <span id="playerCount"></span>/<span id="maxPlayers"></span> 
+										<br /> 
+										Spectators: <span id="spectatorCount"></span>/<span id="maxSpectators"></span> 
+										<br /> 
+										Score: <span id="score"></span></p>
+								</td>
+							</tr>
+						</table>
+						
+						<div id="playerTable"></div>
+						
+						<hr />
+						
+						<h2>Hub</h2>
+						
+						<p> Num Instences </p>
+						<p> Total Game Players </p>
+						<p> Total Lobby Players </p>
+						
+						
+						
+					</div>
+				</div>
+			</main>
+			
+			<nav id="nav">
+				<div class="innertube">
+					<h3>Main</h3>
+					<ul>
+						<li><a href="#">Summary</a></li>
+						<li><a href="#">Access Policy</a></li>
+						<li><a href="#">Logout</a></li>
+					</ul>
+
+					<h3>Dedi</h3>
+					<ul>
+						<li><a href="#">Players</a></li>
+						<li><a href="#">Settings</a></li>
+						<li><a href="#">Mutators</a></li>
+					</ul>	
+					
+					<h3>Hub</h3>
+					<ul>
+						<li><a href="#">Instences</a></li>
+						<li><a href="#">Settings</a></li>
+						<li><a href="#">Mutators</a></li>
+
+					</ul>					
+				</div>
+			</nav>
+			
+		</div>
+	</body>
 </html>

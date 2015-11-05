@@ -1,0 +1,65 @@
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+
+<script>
+
+function requestLogin()
+{
+	var username = document.getElementById("username").value;
+	var password = document.getElementById("password").value;
+	
+	if (username == '' || password == '')
+	{
+		document.getElementById("msg").innerHTML = "Please fill all fields"
+	} 
+	else 
+	{
+	var dataString = '{"request":{"login":{"username":"'+ username +'","password":"'+ password +'"}}}';
+	document.getElementById("msg2").innerHTML = dataString;
+		$.ajax({
+			type: "post",
+			url: "http://localhost/",
+			data: dataString,
+			cache: false,
+			success: function(response) {
+				var json = $.parseJSON(response);
+				
+				console.debug(json);
+
+				if ($(json) != null)
+				{
+					if (json.response.login.state == true)
+					{
+						alert("logged in");
+					}
+					else
+					{
+						alert("invalid login");
+					}
+					
+				}
+				else
+				{
+					document.getElementById("msg").innerHTML = "Error with response";
+				}
+			}
+		});
+	}
+	
+}
+</script>
+<div id="msg">Plase Login</div>
+<div id="msg2">Plase Login</div>
+<table>
+	<tr>
+		<td>Username</td>
+		<td><input type="text" id="username" value="test"/></td>
+	</tr>
+	<tr>
+		<td>Password</td>
+		<td><input type="password" id="password" value="test"/></td>
+	</tr>		
+	<tr>
+		<td></td>
+		<td><input type="button" id="login" value="Login" onclick="requestLogin()" /></td>
+	</tr>
+</table>

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<body>
+<img src="img/utlogo.png">
+<h1>Admin Panel</h1>
+<form method="POST" action="index.html">
+<label for="consolecommand">Console command: </label>
+<input type="text" name="consolecommand" value="" />
+<input type="submit" />
+</form>
+
+<br>
+<br>
+
+<div id="serverinfo"></div>
+<br>
+<div id="playertable"></div>
+
+<script language="javascript">
+	var local = true;
+	
+	// debug preview variables to check html	
+	var serverinfo = "";
+	//document.getElementById('playertable').innerHTML = generatePlayerTable();
+	//document.getElementById('serverinfo').innerHTML = generateServerInfo();
+	
+	if (local)
+	{
+		serverinfo = { mapname:"MP_NickTest1", timeremaining:860, goalscore:10, Players:[{name:"PeteNub",score:10,kills:10,deaths:10}, {name:"BarkTooth",score:1,kills:1,deaths:50}], maprotation:["DM-NickTest1","DM-Circuit"] };
+		
+		document.getElementById('playertable').innerHTML = generatePlayerTable();
+		document.getElementById('serverinfo').innerHTML = generateServerInfo();
+	} 
+	else
+	{
+		var xmlhttp = new XMLHttpRequest();
+		xmlhttp.onreadystatechange = function()
+		{
+			if (xmlhttp.readyState == 4 && (xmlhttp.status == 220 || xmlhttp.status == 200))
+			{
+				serverinfo = JSON.parse(xmlhttp.responseText);
+				
+				document.getElementById('playertable').innerHTML = generatePlayerTable();
+				document.getElementById('serverinfo').innerHTML = generateServerInfo();
+			}
+		}
+		xmlhttp.open("GET", "serverinfo.json", true);
+		xmlhttp.send();
+	}
+	function generateServerInfo()
+	{
+		var html = "<h2>" + serverinfo.mapname + "</h2>";
+		html += "Time: " + serverinfo.timeremaining + " seconds left<br>";
+		html += "Goal score: " + serverinfo.goalscore + "<br>";
+		
+		html += "<h3>Map Rotation</h3>";
+		for (i in serverinfo.maprotation)
+		{
+			var map = serverinfo.maprotation[i];
+			html += map + "<br>";
+		}
+		
+		return html;
+	}
+	
+	function generatePlayerTable()
+	{
+		var html = "<h2>Players</h2>";
+		
+		html += "<table><tr><th>Name</th><th>Score</th><th>Kills</th><th>Deaths</th><th>Kick?</th><th>Ban?</th></tr>";
+		
+		for (Player in serverinfo.Players)
+		{
+			var PlayerData = serverinfo.Players[Player];
+			html += "<tr><td>" + PlayerData.name + "</td><td>" + PlayerData.score + "</td><td>" + PlayerData.kills + "</td><td>" + PlayerData.deaths + "</td>";
+			// These links should really be POST instead of GET
+			html += "<td><a href=admin.html?kick=" + PlayerData.name + ">Kick</a></td>";
+			html += "<td><a href=admin.html?ban=" + PlayerData.name + ">Ban</a></td>";
+			html +="</tr>";
+		}
+		
+		html += "</table>";
+		return html;
+	}
+	
+</script>
+
+</body>
+</html>
