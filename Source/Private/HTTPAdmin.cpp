@@ -2,8 +2,12 @@
 #include "HTTPAdmin.h"
 #include "Base64.h"
 #include "UTGameEngine.h"
+// REMOVE once done
+#include "UTLobbyGameState.h"
+#include "UTLobbyGameMode.h"
 
-UHTTPAdmin::UHTTPAdmin(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
+UHTTPAdmin::UHTTPAdmin(const FObjectInitializer& ObjectInitializer) 
+	: Super(ObjectInitializer)
 {
 	MGServer = nullptr;
 	GameMode = nullptr;
@@ -78,7 +82,86 @@ int UHTTPAdmin::MGHandler(mg_connection* conn, enum mg_event ev)
 	}
 	else if (ev == MG_REQUEST) // Something was requested
 	{
+		// Determin if this is a Lobby or Dedi server
+		// Create a new object of given type
+		// Call ProcessRequest
+		// Call JSON return
+		// Send return back to client
+
+		// Get a reference of any object using the UTBaseGameMode
+		AUTBaseGameMode* BaseGameMode;
+		BaseGameMode = Cast<AUTBaseGameMode>(GWorld->GetAuthGameMode());
+
+		// Are we a Lobby server?
+		if (BaseGameMode->IsLobbyServer())
+		{
+			// Yes, get a reference to the lobby 
+			AUTLobbyGameMode* LobbyGameMode = GWorld->GetAuthGameMode<AUTLobbyGameMode>();
+			if (LobbyGameMode)
+			{
+				// Create a new object
+				HTTPAdminLobby* HTTPLobby;
+				HTTPLobby->GameMode = LobbyGameMode;
+				// set World
+				// set GameMode
+				// set Connection
+				// IF object->ProcessRequest
+					// Call JSON return
+				// else
+					// return MG_FALSE; // Nothing for us to process here, hand back to Mongoose to surve page/image
+
+			}
+			else
+			{
+				// Umm error, we are not a lobby server
+			}
+		} 
+		else
+		{
+			// Nope, we must be a dedi server
+
+			AUTGameMode* GameMode = GWorld->GetAuthGameMode<AUTGameMode>();
+			if (GameMode)
+			{
+				// Create a new object
+				// Call ProcessRequest
+				// Call JSON return
+			}
+			else
+			{
+				// Umm error, we are not a dedi server
+			}
+
+		}
+
+
+
+
+
+		// Send return back to client
+
+
+
+
+
+
+
+
+
+
+		// -----------
+
+
+
+
+
+
+
+		
+
 		GameMode = Cast<AUTGameMode>(GWorld->GetAuthGameMode());
+
+		//AUTLobbyGameState* LobbyGameState = GWorld->GetGameState<AUTLobbyGameState>();
 
 		FString URL(conn->uri);
 
@@ -89,6 +172,42 @@ int UHTTPAdmin::MGHandler(mg_connection* conn, enum mg_event ev)
 		// GET
 		if (FString(conn->request_method) == FString(TEXT("GET")))
 		{
+			// test.json
+			if (FullFileName == FString(TEXT("test.json")))
+			{
+				FString Message;
+				/*
+				if (LobbyGameState)
+				{
+					Message = TEXT("Lobby");
+					if (GameMode) {
+						Message += TEXT("+ Game Mode");
+					}
+				}
+				else
+				{
+					Message = TEXT("Dedi");
+					if (GameMode) {
+						Message += TEXT("+ Game Mode");
+					}
+				}
+				*/
+				/*
+				if (GameMode2->IsLobbyServer())
+				{
+					Message = TEXT("Lobby");
+				} 
+				else
+				{
+					Message = TEXT("Dedi");
+				}
+				*/
+
+				mg_send_header(conn, "Content-Type", "application/json");
+				mg_send_data(conn, TCHAR_TO_ANSI(*Message), Message.Len());
+				return MG_TRUE; // Request has been processed, no need to hand back to Mongoos
+			}
+
 			// request.json
 			if (FullFileName == FString(TEXT("request.json")))
 			{
@@ -170,10 +289,12 @@ int UHTTPAdmin::MGHandler(mg_connection* conn, enum mg_event ev)
 FString UHTTPAdmin::PrepareAdminJSON()
 {
 	
-	FString JSON = TEXT("{");
+	FString JSON;
 
 	if (GameMode != nullptr && GameMode->GameState != nullptr)
 	{
+		JSON += TEXT("{");
+
 		JSON += TEXT("\"gamemode\":\"") + GameMode->GetName() + TEXT("\",");
 		JSON += TEXT("\"mapname\":\"") + GWorld->GetMapName() + TEXT("\",");
 
@@ -371,4 +492,12 @@ FString UHTTPAdmin::FriendlyMatchState(FName MatchState)
 
 	return FString(TEXT("Unknown"));
 	
+}
+
+void SetServType()
+{
+//	if (GWorld->Get)
+	// ServType = ServType::HUB;
+	//ServType = ServType::Dedi;
+	//ServType = ServType::Unknown;
 }

@@ -11,10 +11,23 @@
 #include "mongoose.h"
 #include "HideWindowsPlatformTypes.h"
 
+#include "HTTPAdminCommon.h"
+#include "HTTPAdminLobby.h"
+#include "HTTPAdminDedi.h"
+
 #include "HTTPAdmin.generated.h"
 
 // Log messages
 DEFINE_LOG_CATEGORY_STATIC(HTTPAdmin, Log, All);
+
+
+namespace ServType
+{
+	const FName Lobby = FName(TEXT("Lobby"));		// Hub/Lobby
+	const FName Dedi = FName(TEXT("Dedi"));			// Dedicated
+	const FName Unknown = FName(TEXT("Unkown"));			// Unkown type
+}
+
 
 // Load the HTTPAdmin config
 UCLASS(Config=HTTPAdmin)
@@ -50,6 +63,9 @@ class UHTTPAdmin : public UObject, public FTickableGameObject
 	FString ActionBen(FString data);
 	FString ActionConsoleCommend(FString data);
 
+	// Server Type (ServType)
+	FName ServType;
+	void SetServType();
 
 	// Get config settings
 	UPROPERTY(Config)
