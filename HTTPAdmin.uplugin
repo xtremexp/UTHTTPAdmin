@@ -6,9 +6,9 @@
 	"VersionName" : "1.0",
 	"CreatedBy" : "Epic Games, Inc.",
 	"CreatedByURL" : "http://epicgames.com",
-	"EngineVersion" : "4.4.0",
+	"EngineVersion" : "4.8.0",
 	"Description" : "HTTP Admin",
-	"Category" : "UnrealTournament.GameMode",
+	"Category" : "UnrealTournament.Mod",
 	"EnabledByDefault" : true,
 	"CanContainContent" : true,
 	

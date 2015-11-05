@@ -1,22 +1,26 @@
 // Copyright 1998-2014 Epic Games, Inc. All Rights Reserved.
 #pragma once
 
-#define USE_MONGOOSE 0
-
 #include "Core.h"
 #include "UnrealTournament.h"
+#include "UTCTFGameMode.h"
+#include "Json.h"
 
-#if USE_MONGOOSE
+// include Mongoose, issues with DWORD
+#include "AllowWindowsPlatformTypes.h"
 #include "mongoose.h"
-#else
-#include "httpd.h"
-#endif
+#include "HideWindowsPlatformTypes.h"
 
 #include "HTTPAdmin.generated.h"
 
+// Log messages
+DEFINE_LOG_CATEGORY_STATIC(HTTPAdmin, Log, All);
+
+// Load the HTTPAdmin config
 UCLASS(Config=HTTPAdmin)
 class UHTTPAdmin : public UObject, public FTickableGameObject
 {
+
 	GENERATED_UCLASS_BODY()
 
 	void Init();
@@ -33,16 +37,21 @@ class UHTTPAdmin : public UObject, public FTickableGameObject
 		return true;
 	}
 
-#if USE_MONGOOSE
+	// Mongoose
 	static int StaticMGHandler(mg_connection* conn, enum mg_event ev);	
 	int MGHandler(mg_connection* conn, enum mg_event ev);
-#else
-	static void StaticHTTPHandler(HttpResponse* Response, void* UserData);
-	void HTTPHandler(HttpResponse* Response);
-#endif
 
+	// Other Methods
 	FString PrepareAdminJSON();
+	FString FriendlyMatchState(FName MatchState);
+	FString RequestJSONPlayers();
 
+	FString ActionKick(FString data);
+	FString ActionBen(FString data);
+	FString ActionConsoleCommend(FString data);
+
+
+	// Get config settings
 	UPROPERTY(Config)
 	bool bRequireAuth;
 
@@ -55,13 +64,10 @@ class UHTTPAdmin : public UObject, public FTickableGameObject
 	FString CombinedAuth;
 
 	UPROPERTY(Config)
-	int32 Port;
+	uint32 Port;
 
 private:
-
-#if USE_MONGOOSE
 	mg_server* MGServer;
-#else
-	Httpd* HTTPServer;
-#endif
+	AUTGameMode* GameMode;
+
 };

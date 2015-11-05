@@ -15,11 +15,12 @@ class FHTTPAdminPlugin : public IModuleInterface
 };
 
 IMPLEMENT_MODULE(FHTTPAdminPlugin, HTTPAdmin)
-
+// Some Comment
 void FHTTPAdminPlugin::StartupModule()
 {
-	UHTTPAdmin* HTTPAdmin = Cast<UHTTPAdmin>(StaticConstructObject(UHTTPAdmin::StaticClass()));
-	HTTPAdmin->Init();
+		UHTTPAdmin* HTTPAdmin = Cast<UHTTPAdmin>(StaticConstructObject(UHTTPAdmin::StaticClass()));
+		HTTPAdmin->Init();
+
 }
 
 

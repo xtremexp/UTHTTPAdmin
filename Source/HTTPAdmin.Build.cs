@@ -13,6 +13,8 @@ namespace UnrealBuildTool.Rules
 					"CoreUObject",
                     "Engine",
                     "UnrealTournament",
+                    "Json", 
+					"JsonUtilities",
 				}
                 );
         }
