@@ -100,22 +100,43 @@ int UHTTPAdmin::MGHandler(mg_connection* conn, enum mg_event ev)
 			if (LobbyGameMode)
 			{
 				// Create a new object
-				HTTPAdminLobby* HTTPLobby;
-				HTTPLobby->GameMode = LobbyGameMode;
-				// set World
+				HTTPAdminLobby* HTTPLobby = new HTTPAdminLobby;
 				// set GameMode
+				HTTPLobby->SetGameMode(LobbyGameMode);
 				// set Connection
-				// IF object->ProcessRequest
-					// Call JSON return
-				// else
-					// return MG_FALSE; // Nothing for us to process here, hand back to Mongoose to surve page/image
+				HTTPLobby->SetConnection(conn);
+				// set World
 
-			}
+				// IF object->ProcessRequest()
+				// Call JSON return
+				// else
+				// return MG_FALSE; // Nothing for us to process here, hand back to Mongoose to surve page/image
+
+				if (HTTPLobby->ProcessRequest())
+				{
+					//FString ReturnData = HTTPLobby->GetJSONReturn();
+					FString ReturnData = conn->content;
+					FString ReturnData2 = FString::Format("%.*s", (int)conn->content_len, (char*)conn->content);
+
+
+					//mg_send_header(conn, "Content-Type", "application/json");
+					//mg_send_data(conn, TCHAR_TO_ANSI(*ReturnData), ReturnData.Len());
+					mg_printf_data(conn, "%.*s", (int)conn->content_len, (char*)conn->content);
+
+					return MG_TRUE;
+
+				}
+				else
+				{
+					return MG_FALSE; // Nothing for us to process here, hand back to Mongoose to surve page/image
+				} // Process request
+
+			} // game lobby
 			else
 			{
-				// Umm error, we are not a lobby server
-			}
-		} 
+				// Umm error, we're not a lobby server
+			} // game lobby
+		}
 		else
 		{
 			// Nope, we must be a dedi server
@@ -136,151 +157,12 @@ int UHTTPAdmin::MGHandler(mg_connection* conn, enum mg_event ev)
 
 
 
-
-
 		// Send return back to client
 
-
-
-
-
-
-
-
-
-
-		// -----------
-
-
-
-
-
-
+		return MG_TRUE;
 
 		
-
-		GameMode = Cast<AUTGameMode>(GWorld->GetAuthGameMode());
-
-		//AUTLobbyGameState* LobbyGameState = GWorld->GetGameState<AUTLobbyGameState>();
-
-		FString URL(conn->uri);
-
-		const FString FileExtension = FPaths::GetExtension(URL);
-		const FString FileName = FPaths::GetBaseFilename(URL);
-		const FString FullFileName = FPaths::GetCleanFilename(URL);
-
-		// GET
-		if (FString(conn->request_method) == FString(TEXT("GET")))
-		{
-			// test.json
-			if (FullFileName == FString(TEXT("test.json")))
-			{
-				FString Message;
-				/*
-				if (LobbyGameState)
-				{
-					Message = TEXT("Lobby");
-					if (GameMode) {
-						Message += TEXT("+ Game Mode");
-					}
-				}
-				else
-				{
-					Message = TEXT("Dedi");
-					if (GameMode) {
-						Message += TEXT("+ Game Mode");
-					}
-				}
-				*/
-				/*
-				if (GameMode2->IsLobbyServer())
-				{
-					Message = TEXT("Lobby");
-				} 
-				else
-				{
-					Message = TEXT("Dedi");
-				}
-				*/
-
-				mg_send_header(conn, "Content-Type", "application/json");
-				mg_send_data(conn, TCHAR_TO_ANSI(*Message), Message.Len());
-				return MG_TRUE; // Request has been processed, no need to hand back to Mongoos
-			}
-
-			// request.json
-			if (FullFileName == FString(TEXT("request.json")))
-			{
-				FString Message = FString(TEXT("Hello, this was a request to a json"));
-				
-				mg_send_header(conn, "Content-Type", "application/json");
-				mg_send_data(conn, TCHAR_TO_ANSI(*Message), Message.Len());
-				return MG_TRUE; // Request has been processed, no need to hand back to Mongoos
-			}
-
-			// DEBUG: Respond to any *.json request
-			if (FileExtension == FString(TEXT("json")))
-			{
-				//
-				FString JSON = PrepareAdminJSON();
-
-				mg_send_header(conn, "Content-Type", "application/json");
-				mg_send_data(conn, TCHAR_TO_ANSI(*JSON), JSON.Len());
-				return MG_TRUE; // Request has been processed, no need to hand back to Mongoose
-			}
-
-		} // GET
-
-		// POST
-		if (FString(conn->request_method) == FString(TEXT("POST")))
-		{
-			if (FullFileName == FString(TEXT("action.json")))
-			{
-				// Check if any data was POSTed to us
-				if (conn->content_len > 0)
-				{
-					// Try and decode the JSON string sent
-					FString JsonString = ANSI_TO_TCHAR((char*)conn->content);
-
-					TSharedPtr<FJsonValue> JsonObject;
-					TSharedRef<TJsonReader<TCHAR>> JsonReader = TJsonReaderFactory<TCHAR>::Create(JsonString);
-
-					// Attempt to decode the JSON string into usable objects
-					// error C2665: 'FJsonSerializer::Deserialize' : none of the 3 overloads could convert all the argument types
-					//FJsonSerializer::Deserialize(JsonReader, JsonObject);
-					
-					// Was the decode successful?
-					if (JsonObject.IsValid())
-					{
-						// loop actions
-						//     Check for method == to requested action
-						//     if found call method passing data
-						//        method returns status for response
-						//     if method not found
-						//        return status for response
-						// send response to client
-
-					}
-					else
-					{
-						// Error: request not in the correct format
-					}
-
-					// DEBUG: send "Done" back to the client
-					FString Message = FString("Done");
-					//Message += conn->content;
-					mg_send_header(conn, "Content-Type", "application/json");
-					mg_send_data(conn, TCHAR_TO_ANSI(*Message), Message.Len());
-					return MG_TRUE; // Request has been processed, no need to hand back to Mongoose
-				}
-				else
-				{
-					// No data wihtin the POST request
-					return MG_FALSE;
-				} 
-			} // action.json
-		} // POST
-	} // request
+	}// request
 
 	return MG_FALSE; // Nothing for us to process here, hand back to Mongoose to surve page/image
 }

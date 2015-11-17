@@ -10,10 +10,11 @@ class HTTPAdminCommon
 {
 	//GENERATED_UCLASS_BODY()
 public:
-	virtual FString GetJSONReturn();
+	//virtual FString GetJSONReturn();
 
-	virtual void SetGameMode(AUTLobbyGameMode GameMode);
-	virtual void SetGameMode(AUTGameMode GameMode);
+	//virtual void SetGameMode(AUTLobbyGameMode* GameMode);
+	//virtual void SetGameMode(AUTGameMode GameMode);
+
 
 protected:
 

@@ -10,9 +10,16 @@ class HTTPAdminLobby : public HTTPAdminCommon {
 
 public:
 	FString GetJSONReturn();
-	void SetGameMode(AUTLobbyGameMode GameMode);
+	void SetGameMode(AUTLobbyGameMode* GameMode);
+	void SetConnection(mg_connection* conn);
+	bool ProcessRequest();
+//protected:
+	bool ProcessGet();
+	bool ProcessPost();
 
 //private:
+	FString ReturnMSG = "";
 	AUTLobbyGameMode* GameMode;
+	mg_connection* conn;
 
 };
