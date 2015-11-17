@@ -48,7 +48,7 @@ bool HTTPAdminLobby::ProcessGet()
 	if (FullFileName == FString(TEXT("request.json")))
 	{
 		//ReturnMSG += TEXT("Hello, this was a request to the lobby json");
-		ReturnMSG += TEXT("{\"servType\":\"Lobby\"}");
+		ReturnMSG += TEXT("{\"servType\":\"lobby\"}");
 		
 		return true; // Request has been processed
 	}
@@ -107,9 +107,8 @@ bool HTTPAdminLobby::ProcessPost()
 		// Check if any data was POSTed to us
 		if (conn->content_len > 0)
 		{
-			// Try and decode the JSON string sent
 
-
+			// Get the data which was posted
 			FString JsonString = FString(ANSI_TO_TCHAR(conn->content));
 			// We only want the request body
 			JsonString = JsonString.Left((int)conn->content_len);

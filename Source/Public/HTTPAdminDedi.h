@@ -20,4 +20,6 @@ public:
 	AUTGameMode* GameMode;
 	mg_connection* conn;
 
+	FString RequestServerInfo();
+
 };

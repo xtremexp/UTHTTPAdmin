@@ -18,6 +18,7 @@ $( document ).ready(function() {
 	// Get the server type
 	getServerType();
 	
+	// Do we have a valid server type?
 	if (serverType != "" && serverType != "unknown")
 	{
 		// Load the summary page
@@ -26,6 +27,7 @@ $( document ).ready(function() {
 		// Load the menu
 		loadMenu();
 	} else {
+		// Not a valid server type, display errors
 		$("#nav").html("");
 		$("#content").html("Error: Unkown server type");
 	}
@@ -86,7 +88,7 @@ function loadMenu()
 
 
 </script>
-<!--	
+	
 <script>
 
 function requestLobby2()
@@ -118,7 +120,10 @@ function requestLobby()
 			}
 		});		
 }
+</script>
 
+<!--	
+<script>
 function request()
 {
 	var dataString = '{"request":["serverInfo", "players"]}';
@@ -237,7 +242,6 @@ request();
 				<div id="msg"></div>
 					
 				<div id="content" class="innertube">
-				temp
 				</div>
 			</main>
 			
