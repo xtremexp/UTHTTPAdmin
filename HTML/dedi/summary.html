@@ -1,0 +1,35 @@
+					<form method="POST" action="action.json">
+					<label for="consolecommand">Console command: </label>
+					<input type="text" name="consolecommand" value="" />
+					<input type="submit" />
+					</form>
+					</div>
+					
+						<h1>Summary</h1>
+						<p> Server Name: <span id="serverName"></span></p>
+						<p> Message of the day <span id="serverMOTD"></span></p>
+						
+						<p> (Below is a live feed, pull every 2 sec)</p>
+						
+						<h2>Dedi Server </h2>
+
+						<table border="1" width="100%">
+							<tr>
+								<td width="25%"> <p>Map Img</p> </td>
+								<td> 
+									<p><small>Last Updated: </small></p>
+									<p>Map Name: <span id="mapName"></span> <br />Game Mode: <span id="gameMode"></span></p>
+								
+									<p>Match State: <span id="matchState"></span> <br /> / Score Limit: <span id="goalScore"></span></p>
+									<p>Time Remaining: <span id="timeRemaining"></span> / <span id="timeLimit"></span>
+									<p>
+										Players: <span id="playerCount"></span>/<span id="maxPlayers"></span> 
+										<br /> 
+										Spectators: <span id="spectatorCount"></span>/<span id="maxSpectators"></span> 
+										<br /> 
+										Score: <span id="score"></span></p>
+								</td>
+							</tr>
+						</table>
+						
+						<div id="playerTable"></div>
