@@ -132,11 +132,6 @@ int UHTTPAdmin::MGHandler(mg_connection* conn, enum mg_event ev)
 					mg_send_data(conn, TCHAR_TO_ANSI(*ReturnData), ReturnData.Len());
 					mg_send_data(conn, "", 0);
 
-					
-
-					
-					
-
 					return MG_TRUE;
 				}
 				else
@@ -158,8 +153,30 @@ int UHTTPAdmin::MGHandler(mg_connection* conn, enum mg_event ev)
 			if (GameMode)
 			{
 				// Create a new object
+				HTTPAdminDedi* HTTPDedi = new HTTPAdminDedi;
+				// set GameMode
+				HTTPDedi->SetGameMode(GameMode);
+				// set Connection
+				HTTPDedi->SetConnection(conn);
+
+				// Create a new object
 				// Call ProcessRequest
-				// Call JSON return
+				if (HTTPDedi->ProcessRequest())
+				{
+					FString ReturnData = HTTPDedi->GetJSONReturn();
+
+					mg_send_header(conn, "Content-Type", "application/json");
+					mg_send_data(conn, TCHAR_TO_ANSI(*ReturnData), ReturnData.Len());
+					mg_send_data(conn, "", 0);
+
+					return MG_TRUE;
+				}
+				else
+				{
+					return MG_FALSE; // Nothing for us to process here, hand back to Mongoose to surve page/image
+
+				} // Process request
+			
 			}
 			else
 			{

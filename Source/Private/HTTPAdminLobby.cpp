@@ -6,7 +6,6 @@
 
 FString HTTPAdminLobby::GetJSONReturn()
 {
-
 	return ReturnMSG;
 }
 
@@ -23,12 +22,10 @@ void HTTPAdminLobby::SetConnection(mg_connection* conn)
 
 bool HTTPAdminLobby::ProcessRequest()
 {
-
 	if (FString(conn->request_method) == FString(TEXT("GET")))
 	{
 		return ProcessGet();
 	}
-
 
 	if (FString(conn->request_method) == FString(TEXT("POST")))
 	{
@@ -41,7 +38,6 @@ bool HTTPAdminLobby::ProcessRequest()
 
 bool HTTPAdminLobby::ProcessGet()
 {
-
 	FString URL(conn->uri);
 
 	const FString FileExtension = FPaths::GetExtension(URL);
@@ -62,7 +58,6 @@ bool HTTPAdminLobby::ProcessGet()
 
 bool HTTPAdminLobby::ProcessPost()
 {
-
 	FString URL(conn->uri);
 
 	const FString FileExtension = FPaths::GetExtension(URL);
