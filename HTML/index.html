@@ -61,6 +61,21 @@
 	
 <script>
 
+function requestLobby2()
+{
+	var dataString = '{"request":[{"name":"serverInfo"},{"name":"players", "data":{"sort":"DESC"}}]}';
+	
+		$.ajax({
+			type: "post",
+			url: "http://localhost:8082/request.json",
+			//data: dataString,
+			cache: false,
+			success: function(data) {
+				document.getElementById('msg').innerHTML = data;
+			}
+		});		
+}
+
 function requestLobby()
 {
 	var dataString = '{"request":[{"name":"serverInfo"},{"name":"players", "data":{"sort":"DESC"}}]}';

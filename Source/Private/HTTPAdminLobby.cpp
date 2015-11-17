@@ -36,8 +36,6 @@ bool HTTPAdminLobby::ProcessRequest()
 	}
 
 	return false;
-
-
 }
 
 
@@ -115,10 +113,14 @@ bool HTTPAdminLobby::ProcessPost()
 		if (conn->content_len > 0)
 		{
 			// Try and decode the JSON string sent
-			FString JsonString = ANSI_TO_TCHAR((char*)conn->content);
-			
-			ReturnMSG += conn->content;
-			ReturnMSG += TEXT(" ") + JsonString + TEXT(" ");
+
+
+			FString JsonString = FString(ANSI_TO_TCHAR(conn->content));
+			// We only want the request body
+			JsonString = JsonString.Left((int)conn->content_len);
+
+			// TODO:
+			ReturnMSG += TEXT("{\"response\":[");
 
 			TSharedPtr<FJsonObject> JsonObject;
 			TSharedRef<TJsonReader<>> JsonReader = TJsonReaderFactory<>::Create(JsonString);
@@ -129,19 +131,6 @@ bool HTTPAdminLobby::ProcessPost()
 			// Was the decode successful?
 			if (JsonObject.IsValid())
 			{
-				// {"request":["serverInfo", "players"]}
-				TArray< TSharedPtr<FJsonValue> > InstallationList = JsonObject->GetArrayField(TEXT("request"));
-				for (int32 Idx = 0; Idx < InstallationList.Num(); Idx++)
-				{
-					TSharedPtr<FJsonObject> InstallationItem = InstallationList[Idx]->AsObject();
-
-					FString AppName = InstallationItem->GetStringField(TEXT("name"));
-					
-					ReturnMSG += TEXT(" ") + AppName;
-					
-				}
-
-				return true;
 				// loop actions
 				//     Check for method == to requested action
 				//     if found call method passing data
@@ -149,7 +138,29 @@ bool HTTPAdminLobby::ProcessPost()
 				//     if method not found
 				//        return status for response
 				// send response to client
+				TArray< TSharedPtr<FJsonValue> > RequestList = JsonObject->GetArrayField(TEXT("request"));
+				for (int32 Idx = 0; Idx < RequestList.Num(); Idx++)
+				{
+					TSharedPtr<FJsonObject> RequestItem = RequestList[Idx]->AsObject();
 
+					FString RequestName = RequestItem->GetStringField(TEXT("name"));
+
+					const TArray< TSharedPtr<FJsonValue> >* RequestData;
+					RequestItem->TryGetArrayField(TEXT("data"), RequestData);
+					
+
+					if (RequestName == "serverInfo")
+					{
+						ReturnMSG += TEXT("{\"name\":\"serverInfo\", \"data\": {}");
+						//ReturnMSG += RequestServerInfo((FJsonValue) RequestData->AsString());
+						ReturnMSG += TEXT("}");
+					}
+
+				}
+
+				// TODO:
+				ReturnMSG += TEXT("]}");
+				return true;
 			}
 			else
 			{
@@ -166,4 +177,9 @@ bool HTTPAdminLobby::ProcessPost()
 	}
 
 	return false; // There is nothing for us to process
+}
+
+FString RequestServerInfo(FString RequestData)
+{
+	return FString(TEXT("{\"serverName\":\"na\"}, {\"motd\":\"na\"}"));
 }

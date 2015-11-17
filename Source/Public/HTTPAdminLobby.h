@@ -22,4 +22,6 @@ public:
 	AUTLobbyGameMode* GameMode;
 	mg_connection* conn;
 
+	FString RequestServerInfo(FString RequestData);
+
 };

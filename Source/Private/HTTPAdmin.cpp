@@ -114,17 +114,30 @@ int UHTTPAdmin::MGHandler(mg_connection* conn, enum mg_event ev)
 
 				if (HTTPLobby->ProcessRequest())
 				{
-					//FString ReturnData = HTTPLobby->GetJSONReturn();
-					FString ReturnData = conn->content;
-					FString ReturnData2 = FString::Format("%.*s", (int)conn->content_len, (char*)conn->content);
+					FString ReturnData = HTTPLobby->GetJSONReturn();
 
-
+					//FString ReturnData = FString::Printf(TEXT("%.*s"), (int)conn->content_len, conn->content);
+					//FString ReturnData2 = FString::Format("%.*s", (int)conn->content_len, (char*)conn->content);
+					//FString ReturnData2 = FString::ChrN((int)conn->content_len, (char*)conn->content);
+					//strncpy(ReturnData, ANSI_TO_TCHAR(conn->content), (int)conn->content_len);
+					//mg_printf_data(conn, "%.*s", (int)conn->content_len, (char*)conn->content);
+					//Wokring
+					//FString HelloWorld = TEXT("Hello World: ") + FString::FromInt(sizeof((char*)conn->content)) + TEXT(" -");
 					//mg_send_header(conn, "Content-Type", "application/json");
-					//mg_send_data(conn, TCHAR_TO_ANSI(*ReturnData), ReturnData.Len());
-					mg_printf_data(conn, "%.*s", (int)conn->content_len, (char*)conn->content);
+					//mg_send_data(conn, conn->content, conn->content_len);
+					//mg_send_data(conn, "", 0);
+
+
+					mg_send_header(conn, "Content-Type", "application/json");
+					mg_send_data(conn, TCHAR_TO_ANSI(*ReturnData), ReturnData.Len());
+					mg_send_data(conn, "", 0);
+
+					
+
+					
+					
 
 					return MG_TRUE;
-
 				}
 				else
 				{
