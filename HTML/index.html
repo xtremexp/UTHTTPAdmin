@@ -90,80 +90,68 @@ function loadMenu()
 </script>
 	
 <script>
-
-function requestLobby2()
+function handleResponse(json)
 {
-	var dataString = '{"request":[{"name":"serverInfo"},{"name":"players", "data":{"sort":"DESC"}}]}';
+	//console.log("Type: "+json['servType']);
 	
-		$.ajax({
-			type: "post",
-			url: "http://localhost:8082/request.json",
-			//data: dataString,
-			cache: false,
-			success: function(data) {
-				document.getElementById('msg').innerHTML = data;
+	if (json.response)
+	{
+		console.log("Response from server");
+		for (var i = 0; i < json.response.length; i++)
+		{
+			var response = json.response[i];
+			console.log("For: "+response.name);
+			
+			var functionName = 'process' + json.servType.slice(0,1).toUpperCase() + json.servType.slice(1);
+			functionName += response.name.slice(0,1).toUpperCase() + response.name.slice(1);
+			
+			try 
+			{
+				window[functionName](response.data);
+			} catch(err) {
+				console.log("Unable to find or error with function "+ functionName +" Error:"+ err);
 			}
-		});		
+		}
+	}
 }
 
-function requestLobby()
+function processDediServerInfo(data)
 {
-	var dataString = '{"request":[{"name":"serverInfo"},{"name":"players", "data":{"sort":"DESC"}}]}';
+	document.getElementById('serverName').innerHTML = data.serverName;
+	document.getElementById('serverMOTD').innerHTML = data.motd;
+	document.getElementById('gameMode').innerHTML = data.gameMode;
+	//document.getElementById('mapRotation').innerHTML = data.mapRotation;
 	
-		$.ajax({
-			type: "post",
-			url: "http://localhost:8082/request.json",
-			data: dataString,
-			cache: false,
-			success: function(data) {
-				document.getElementById('msg').innerHTML = data;
-			}
-		});		
-}
-</script>
-
-<!--	
-<script>
-function request()
-{
-	var dataString = '{"request":["serverInfo", "players"]}';
-	
-		$.ajax({
-			type: "get",
-			url: "http://localhost:8082/serverinfo.json",
-			//data: dataString,
-			cache: false,
-			success: function(data) {
-				handelResponse(data);
-			}
-		});		
-}	
-		
-		
-function handelResponse(data)		
-{
-	//console.debug(data);
-	var json = data;
-
-	document.getElementById('serverName').innerHTML = '';
-	document.getElementById('serverMOTD').innerHTML = '';
-	document.getElementById('mapName').innerHTML = json.mapname;
-	document.getElementById('gameMode').innerHTML = json.gamemode;
-	document.getElementById('matchState').innerHTML = json.MatchState;
-	document.getElementById('playerCount').innerHTML = '';
-	document.getElementById('maxPlayers').innerHTML = '';
-	document.getElementById('spectatorCount').innerHTML = '';
-	document.getElementById('maxSpectators').innerHTML = '';
-	
-	document.getElementById('timeLimit').innerHTML = timeConvert(json.timelimit);
-	document.getElementById('timeRemaining').innerHTML = timeConvert(json.timeremaining);
-	document.getElementById('goalScore').innerHTML = json.goalscore;
-	
-	document.getElementById('playerTable').innerHTML = generatePlayerTable(json.Players);
+	//	document.getElementById('maxPlayers').innerHTML = '';
+	//	document.getElementById('maxSpectators').innerHTML = '';
+	console.log("Done processDediServerInfo");
+	return true;
 }
 
-function generatePlayerTable(playersJson)
+function processDediMatchInfo(data)
 {
+	document.getElementById('mapName').innerHTML = data.map;
+	document.getElementById('timeLimit').innerHTML = timeConvert(data.timeLimit);
+	document.getElementById('timeRemaining').innerHTML = timeConvert(data.timeRemaining);
+	// teamGame
+	document.getElementById('matchState').innerHTML = data.state;
+	// hasStarted
+	// inProgress
+	document.getElementById('goalScore').innerHTML = data.goalScore;
+	// minPlayersToStart
+	
+
+	//document.getElementById('playerCount').innerHTML = '';
+	//document.getElementById('spectatorCount').innerHTML = '';
+	
+	
+	console.log("Done processDediMatchInfo");
+	return true;
+}
+
+function processDediPlayers(data)
+{
+/*
 	var html = "<h2>Players</h2>";
 	
 	html += "<table><tr><th>Name</th><th>Score</th><th>Kills</th><th>Deaths</th><th>Kick?</th><th>Ban?</th></tr>";
@@ -194,6 +182,69 @@ function generatePlayerTable(playersJson)
 	
 	
 	return html;
+*/
+	console.log("Done processDediPlayers");
+	return true;
+}
+
+function request()
+{
+	var dataString = '{"request":[{"name":"serverInfo"},{"name":"matchInfo"},{"name":"players", "data":{"sort":"DESC"}}]}';
+	
+		$.ajax({
+			type: "post",
+			url: "http://localhost:8082/request.json",
+			data: dataString,
+			cache: false,
+			success: function(data) {
+				handleResponse(data);
+			}
+		});		
+}
+
+function requestServerInfo()
+{
+	var dataString = '{"request":[{"name":"serverInfo"}]}';
+	
+		$.ajax({
+			type: "post",
+			url: "http://localhost:8082/request.json",
+			data: dataString,
+			cache: false,
+			success: function(data) {
+				document.getElementById('msg').innerHTML = data;
+			}
+		});		
+}
+
+function requestMatchInfo()
+{
+	var dataString = '{"request":[{"name":"matchInfo"}]}';
+	
+		$.ajax({
+			type: "post",
+			url: "http://localhost:8082/request.json",
+			data: dataString,
+			cache: false,
+			success: function(data) {
+				document.getElementById('msg').innerHTML = data;
+			}
+		});		
+}
+
+function requestPlayers()
+{
+	var dataString = '{"request":[{"name":"players"}]}';
+	
+		$.ajax({
+			type: "post",
+			url: "http://localhost:8082/request.json",
+			data: dataString,
+			cache: false,
+			success: function(data) {
+				document.getElementById('msg').innerHTML = data;
+			}
+		});		
 }
 
 function timeConvert(seconds)
@@ -203,36 +254,10 @@ function timeConvert(seconds)
     return date.toTimeString().replace(/.*(\d{2}:\d{2}:\d{2}).*/, "$1");
 }
 
-
-function actionPlayerKick(NameOrUID)
-{
-	if (NameOrUID)
-	{
-		var json = '{"action":[{"kick":"'+ NameOrUID +'"}]}';
-		sendAction(json);
-	}
-}
-
-function actionPlayerBan()
-{
-}
-
-function sendAction(data)
-{
-	$.ajax({
-		type: "post",
-		url: "http://localhost:8082/action.json",
-		data: data,
-		cache: false,
-		success: function(data) {
-			document.getElementById('msg').innerHTML = data;
-		}
-	});	
-}
 //setInterval(request, 2000);
-request();
+//request();
 </script>
--->	
+
 	</head>
 	
 	<body>
