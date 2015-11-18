@@ -21,5 +21,6 @@ public:
 	mg_connection* conn;
 
 	FString RequestServerInfo();
+	FString URL;
 
 };

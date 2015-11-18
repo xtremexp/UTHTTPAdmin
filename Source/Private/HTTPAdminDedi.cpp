@@ -20,30 +20,37 @@ void HTTPAdminDedi::SetConnection(mg_connection* conn)
 
 bool HTTPAdminDedi::ProcessRequest()
 {
+	// Get the url being requested
+	FString URL(conn->uri);
+	HTTPAdminDedi::URL = URL;
+	// Notes:
+	// FileExtension = FPaths::GetExtension(URL);
+	// FileName = FPaths::GetBaseFilename(URL);
+	// FullFileName = FPaths::GetCleanFilename(URL);
 
+	// GET
 	if (FString(conn->request_method) == FString(TEXT("GET")))
 	{
 		return ProcessGet();
 	}
 
+	// POST
 	if (FString(conn->request_method) == FString(TEXT("POST")))
 	{
-		return ProcessPost();
+		// Check if any data was POSTed to us
+		if (conn->content_len > 0)
+			return ProcessPost();
+		else
+			return false; // Error: no data posted
 	}
 
-	return false;
+	return false; // Request method was something other then GET or POST
 }
 
 bool HTTPAdminDedi::ProcessGet()
 {
-	FString URL(conn->uri);
-
-	const FString FileExtension = FPaths::GetExtension(URL);
-	const FString FileName = FPaths::GetBaseFilename(URL);
-	const FString FullFileName = FPaths::GetCleanFilename(URL);
-
 	// request.json
-	if (FullFileName == FString(TEXT("request.json")))
+	if (FPaths::GetCleanFilename(URL) == FString(TEXT("request.json")))
 	{
 		//ReturnMSG += TEXT("Hello, this was a request to the lobby json");
 		ReturnMSG += TEXT("{\"servType\":\"dedi\"}");
@@ -56,14 +63,9 @@ bool HTTPAdminDedi::ProcessGet()
 
 bool HTTPAdminDedi::ProcessPost()
 {
-	FString URL(conn->uri);
-
-	const FString FileExtension = FPaths::GetExtension(URL);
-	const FString FileName = FPaths::GetBaseFilename(URL);
-	const FString FullFileName = FPaths::GetCleanFilename(URL);
 
 	// Actions e.g. Set map, kick player
-	if (FullFileName == FString(TEXT("action.json")))
+	if (FPaths::GetCleanFilename(URL) == FString(TEXT("action.json")))
 	{
 	}
 
@@ -72,87 +74,78 @@ bool HTTPAdminDedi::ProcessPost()
 
 
 	// Requested information, e.g. Server Name, Current map, players
-	if (FullFileName == FString(TEXT("request.json")))
+	if (FPaths::GetCleanFilename(URL) == FString(TEXT("request.json")))
 	{
-		// Check if any data was POSTed to us
-		if (conn->content_len > 0)
+
+		// Get the data which was posted
+		FString JsonString = FString(ANSI_TO_TCHAR(conn->content));
+		// We only want the request body
+		JsonString = JsonString.Left((int)conn->content_len);
+
+		TSharedPtr<FJsonObject> JsonObject;
+		TSharedRef<TJsonReader<>> JsonReader = TJsonReaderFactory<>::Create(JsonString);
+
+		// Attempt to decode the JSON string into usable objects
+		FJsonSerializer::Deserialize(JsonReader, JsonObject);
+
+		// Was the decode successful?
+		if (JsonObject.IsValid())
 		{
-			// Get the data which was posted
-			FString JsonString = FString(ANSI_TO_TCHAR(conn->content));
-			// We only want the request body
-			JsonString = JsonString.Left((int)conn->content_len);
 
-			TSharedPtr<FJsonObject> JsonObject;
-			TSharedRef<TJsonReader<>> JsonReader = TJsonReaderFactory<>::Create(JsonString);
+			// REF: return json
+			// TODO: move this var to global
+			TSharedPtr<FJsonObject> ReturnJsonObj = MakeShareable(new FJsonObject);
+			TArray<TSharedPtr<FJsonValue>> ResponcesJsonObj;
 
-			// Attempt to decode the JSON string into usable objects
-			FJsonSerializer::Deserialize(JsonReader, JsonObject);
 
-			// Was the decode successful?
-			if (JsonObject.IsValid())
+
+			TArray< TSharedPtr<FJsonValue> > RequestList = JsonObject->GetArrayField(TEXT("request"));
+			// loop
+			for (int32 Idx = 0; Idx < RequestList.Num(); Idx++)
 			{
-
-				// REF: return json
-				// TODO: move this var to global
-				TSharedPtr<FJsonObject> ReturnJsonObj = MakeShareable(new FJsonObject);
-				TArray<TSharedPtr<FJsonValue>> ResponcesJsonObj;
+				TSharedPtr<FJsonObject> Response = MakeShareable(new FJsonObject);
 
 
+				TSharedPtr<FJsonObject> RequestItem = RequestList[Idx]->AsObject();
+				// Get the request name
+				FString RequestName = RequestItem->GetStringField(TEXT("name"));
 
-				TArray< TSharedPtr<FJsonValue> > RequestList = JsonObject->GetArrayField(TEXT("request"));
-				// loop
-				for (int32 Idx = 0; Idx < RequestList.Num(); Idx++)
+				// Get any data which was posted with this request
+				const TArray< TSharedPtr<FJsonValue> >* RequestData;
+				RequestItem->TryGetArrayField(TEXT("data"), RequestData);
+
+				// Action the requests
+
+				if (RequestName == "serverInfo")
 				{
-					TSharedPtr<FJsonObject> Response = MakeShareable(new FJsonObject);
+					Response->SetStringField("name", RequestName);
+					Response->SetStringField("data", RequestServerInfo()); // Need to pass the data to called methof
 
-
-					TSharedPtr<FJsonObject> RequestItem = RequestList[Idx]->AsObject();
-					// Get the request name
-					FString RequestName = RequestItem->GetStringField(TEXT("name"));
-
-					// Get any data which was posted with this request
-					const TArray< TSharedPtr<FJsonValue> >* RequestData;
-					RequestItem->TryGetArrayField(TEXT("data"), RequestData);
-
-					// Action the requests
-
-					if (RequestName == "serverInfo")
-					{
-						Response->SetStringField("name", RequestName);
-						Response->SetStringField("data", RequestServerInfo()); // Need to pass the data to called methof
-
-						// Add this response to the list of responses
-						ResponcesJsonObj.AddZeroed();
-						ResponcesJsonObj[Idx] = MakeShareable(new FJsonValueObject(Response));
-					}
-
-
+					// Add this response to the list of responses
+					ResponcesJsonObj.AddZeroed();
+					ResponcesJsonObj[Idx] = MakeShareable(new FJsonValueObject(Response));
 				}
 
 
-				ReturnJsonObj->SetArrayField(TEXT("responce"), ResponcesJsonObj);
+			}
+
+
+			ReturnJsonObj->SetArrayField(TEXT("responce"), ResponcesJsonObj);
 				
 
-				FString OutputString;
-				TSharedRef< TJsonWriter<> > Writer = TJsonWriterFactory<>::Create(&OutputString);
+			FString OutputString;
+			TSharedRef< TJsonWriter<> > Writer = TJsonWriterFactory<>::Create(&OutputString);
 
-				FJsonSerializer::Serialize(ReturnJsonObj.ToSharedRef(), Writer);
-				ReturnMSG += OutputString;
+			FJsonSerializer::Serialize(ReturnJsonObj.ToSharedRef(), Writer);
+			ReturnMSG += OutputString;
 
-				return true; // Request has been processed
+			return true; // Request has been processed
 
-			}
-			else
-			{
-				// Error: request not in the correct format
-				ReturnMSG += "Error: request not in the correct format";
-				return true; // false
-			}
 		}
 		else
 		{
-			// Error: no data posted
-			ReturnMSG += "Error: no data posted";
+			// Error: request not in the correct format
+			ReturnMSG += "Error: request not in the correct format";
 			return true; // false
 		}
 	}
