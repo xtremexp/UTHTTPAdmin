@@ -3,19 +3,15 @@
 #include "HTTPAdminCommon.h"
 #include "HTTPAdminDedi.h"
 
+HTTPAdminDedi::HTTPAdminDedi(mg_connection* conn)
+{
+	GameMode = GWorld->GetAuthGameMode<AUTGameMode>();
+	HTTPAdminDedi::conn = conn;
+}
+
 FString HTTPAdminDedi::GetJSONReturn()
 {
 	return ReturnMSG;
-}
-
-void HTTPAdminDedi::SetGameMode(AUTGameMode* UTGameMode)
-{
-	HTTPAdminDedi::GameMode = GameMode;
-}
-
-void HTTPAdminDedi::SetConnection(mg_connection* conn)
-{
-	HTTPAdminDedi::conn = conn;
 }
 
 bool HTTPAdminDedi::ProcessRequest()
@@ -119,18 +115,29 @@ bool HTTPAdminDedi::ProcessPost()
 				if (RequestName == "serverInfo")
 				{
 					Response->SetStringField("name", RequestName);
-					Response->SetStringField("data", RequestServerInfo()); // Need to pass the data to called methof
-
-					// Add this response to the list of responses
-					ResponcesJsonObj.AddZeroed();
-					ResponcesJsonObj[Idx] = MakeShareable(new FJsonValueObject(Response));
+					Response->SetObjectField("data", RequestServerInfo()); // Need to pass the data to called method
 				}
 
+				if (RequestName == "matchInfo")
+				{
+					Response->SetStringField("name", RequestName);
+					Response->SetObjectField("data", RequestMatchInfo()); // Need to pass the data to called method
+				}
+
+				if (RequestName == "players")
+				{
+					Response->SetStringField("name", RequestName);
+					Response->SetObjectField("data", RequestPlayers()); // Need to pass the data to called method
+				}
+
+				// Add this response to the list of responses
+				ResponcesJsonObj.AddZeroed();
+				ResponcesJsonObj[Idx] = MakeShareable(new FJsonValueObject(Response));
 
 			}
 
-
-			ReturnJsonObj->SetArrayField(TEXT("responce"), ResponcesJsonObj);
+			ReturnJsonObj->SetStringField(TEXT("servType"), TEXT("dedi"));
+			ReturnJsonObj->SetArrayField(TEXT("response"), ResponcesJsonObj);
 				
 
 			FString OutputString;
@@ -153,7 +160,47 @@ bool HTTPAdminDedi::ProcessPost()
 	return false; // There is nothing for us to process
 }
 
-FString HTTPAdminDedi::RequestServerInfo()
+TSharedPtr<FJsonObject> HTTPAdminDedi::RequestServerInfo()
 {
-	return FString(TEXT("{\"serverName\":\"na\"}, {\"motd\":\"na\"}"));
+	TSharedPtr<FJsonObject> ServerInfo = MakeShareable(new FJsonObject);
+
+	if (GameMode != nullptr && GameMode->GameState != nullptr)
+	{
+
+		ServerInfo->SetStringField(TEXT("serverName"), GameMode->UTGameState->ServerName); // GameMode->UTGameState->ServerName
+		ServerInfo->SetStringField(TEXT("motd"), GameMode->UTGameState->ServerMOTD);	// GameMode->UTGameState->ServerMOTD
+		ServerInfo->SetStringField(TEXT("gameMode"), GameMode->GetName()); // GameMode->GetName()
+		ServerInfo->SetStringField(TEXT("mapRotation"), TEXT("na"));
+	}
+	else
+	{
+		ServerInfo->SetStringField(TEXT("error"), TEXT("no game mode or game state"));
+	}
+	return ServerInfo;
+}
+
+TSharedPtr<FJsonObject> HTTPAdminDedi::RequestMatchInfo()
+{
+	TSharedPtr<FJsonObject> MatchInfo = MakeShareable(new FJsonObject);
+
+	MatchInfo->SetStringField(TEXT("map"), GWorld->GetMapName()); // 
+	MatchInfo->SetNumberField(TEXT("timeLimit"), GameMode->TimeLimit ); // GameMode->TimeLimit
+	MatchInfo->SetNumberField(TEXT("timeRemaining"), GameMode->UTGameState->RemainingTime); // GameMode->UTGameState->RemainingTime
+	MatchInfo->SetNumberField(TEXT("teamGame"), GameMode->bTeamGame); // GameMode->bTeamGame
+	MatchInfo->SetStringField(TEXT("state"), UHTTPAdmin::FriendlyMatchState(GameMode->GetMatchState())); // FriendlyMatchState(GameMode->GetMatchState()) // MOVE TO COMMON
+	MatchInfo->SetNumberField(TEXT("hasStarted"), GameMode->HasMatchStarted()); // GameMode->HasMatchStarted()
+	MatchInfo->SetNumberField(TEXT("InProgress"), GameMode->IsMatchInProgress()); // GameMode->IsMatchInProgress()
+	MatchInfo->SetNumberField(TEXT("goalScore"), GameMode->UTGameState->GoalScore); // GameMode->UTGameState->GoalScore
+	MatchInfo->SetNumberField(TEXT("minPlayersToStart"), GameMode->MinPlayersToStart); // GameMode->MinPlayersToStart
+
+	return MatchInfo;
+}
+
+TSharedPtr<FJsonObject> HTTPAdminDedi::RequestPlayers()
+{
+	TSharedPtr<FJsonObject> Players = MakeShareable(new FJsonObject);
+
+
+	//Players->SetArrayField();
+	return Players;
 }

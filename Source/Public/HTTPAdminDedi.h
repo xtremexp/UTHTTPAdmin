@@ -7,20 +7,23 @@
 class HTTPAdminDedi : public HTTPAdminCommon {
 
 public:
+	HTTPAdminDedi(mg_connection* conn);
 	FString GetJSONReturn();
-	void SetGameMode(AUTGameMode* GameMode);
-	void SetConnection(mg_connection* conn);
 	bool ProcessRequest();
 
 //protected:
-	bool ProcessGet();
-	bool ProcessPost();
+
 //private:
 	FString ReturnMSG = "";
 	AUTGameMode* GameMode;
 	mg_connection* conn;
-
-	FString RequestServerInfo();
 	FString URL;
+
+	bool ProcessGet();
+	bool ProcessPost();
+
+	TSharedPtr<FJsonObject> RequestServerInfo();
+	TSharedPtr<FJsonObject> RequestMatchInfo();
+	TSharedPtr<FJsonObject> RequestPlayers();
 
 };

@@ -56,7 +56,7 @@ class UHTTPAdmin : public UObject, public FTickableGameObject
 
 	// Other Methods
 	FString PrepareAdminJSON();
-	FString FriendlyMatchState(FName MatchState);
+	static FString FriendlyMatchState(FName MatchState);
 	FString RequestJSONPlayers();
 
 	FString ActionKick(FString data);

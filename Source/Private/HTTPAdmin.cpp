@@ -152,14 +152,9 @@ int UHTTPAdmin::MGHandler(mg_connection* conn, enum mg_event ev)
 			AUTGameMode* GameMode = GWorld->GetAuthGameMode<AUTGameMode>();
 			if (GameMode)
 			{
-				// Create a new object
-				HTTPAdminDedi* HTTPDedi = new HTTPAdminDedi;
-				// set GameMode
-				HTTPDedi->SetGameMode(GameMode);
-				// set Connection
-				HTTPDedi->SetConnection(conn);
+				// Create a new object passing the connection
+				HTTPAdminDedi* HTTPDedi = new HTTPAdminDedi(conn);
 
-				// Create a new object
 				// Call ProcessRequest
 				if (HTTPDedi->ProcessRequest())
 				{
