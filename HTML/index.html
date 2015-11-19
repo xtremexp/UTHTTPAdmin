@@ -112,6 +112,8 @@ function handleResponse(json)
 				console.log("Unable to find or error with function "+ functionName +" Error:"+ err);
 			}
 		}
+		var date = new Date();
+		document.getElementById('lastUpdate').innerHTML = date.toLocaleTimeString();
 	}
 }
 
@@ -140,10 +142,11 @@ function processDediMatchInfo(data)
 	document.getElementById('goalScore').innerHTML = data.goalScore;
 	// minPlayersToStart
 	
-
-	//document.getElementById('playerCount').innerHTML = '';
-	//document.getElementById('spectatorCount').innerHTML = '';
-	
+	document.getElementById('maxPlayers').innerHTML = data.maxPlayers;
+	document.getElementById('maxSpectators').innerHTML = data.maxSpectators;
+	document.getElementById('playerCount').innerHTML = data.playerCount;
+	document.getElementById('botCount').innerHTML = data.botCount;
+	document.getElementById('spectatorCount').innerHTML = data.specCount;
 	
 	console.log("Done processDediMatchInfo");
 	return true;
@@ -151,21 +154,36 @@ function processDediMatchInfo(data)
 
 function processDediPlayers(data)
 {
-/*
+	data.sort(function(a, b) {
+    return parseFloat(b.score) - parseFloat(a.score);
+	});
+
 	var html = "<h2>Players</h2>";
 	
-	html += "<table><tr><th>Name</th><th>Score</th><th>Kills</th><th>Deaths</th><th>Kick?</th><th>Ban?</th></tr>";
+	html += "<table><tr>" +
+	"<th>Name</th>" +
+	"<th>Score</th>" +
+	"<th>Kills</th>" +
+	"<th>Deaths</th>" +
+	"<th>Flag Returns</th>" +
+	"<th>Flag Captures</th>" +
+	"<th>Bot?</th>" +
+	"<th>Kick</th>" +
+	"<th>Ban</th></tr>";
 		
-	for (Player in playersJson)
+	for (Player in data)
 	{
-		var PlayerData = playersJson[Player];
+		var PlayerData = data[Player];
 		html += "<tr>";
 		html += "<td><a alt=\""+ PlayerData.id +"\">" + PlayerData.name + "</a></td>";
 		html += "<td>" + PlayerData.score + "</td>";
 		html += "<td>" + PlayerData.kills + "</td>";
 		html += "<td>" + PlayerData.deaths + "</td>";
+		html += "<td>FR</td>";
+		html += "<td>FC</td>";
+		html += "<td>" + (PlayerData.isABot? "Yes" : "") + "</td>";
 
-		if (PlayerData.bot == 0)
+		if (PlayerData.isABot == 1)
 		{
 			html += "<td></td>";
 			html += "<td></td>";
@@ -181,8 +199,7 @@ function processDediPlayers(data)
 	html += "</table>";	
 	
 	
-	return html;
-*/
+	document.getElementById('playerTable').innerHTML = html; 
 	console.log("Done processDediPlayers");
 	return true;
 }
@@ -191,15 +208,17 @@ function request()
 {
 	var dataString = '{"request":[{"name":"serverInfo"},{"name":"matchInfo"},{"name":"players", "data":{"sort":"DESC"}}]}';
 	
-		$.ajax({
-			type: "post",
-			url: "http://localhost:8082/request.json",
-			data: dataString,
-			cache: false,
-			success: function(data) {
-				handleResponse(data);
-			}
-		});		
+	$.ajax({
+		type: "post",
+		url: "http://localhost:8082/request.json",
+		data: dataString,
+		cache: false,
+		success: function(data) {
+			handleResponse(data);
+		}
+	});	
+
+	
 }
 
 function requestServerInfo()
@@ -212,7 +231,7 @@ function requestServerInfo()
 			data: dataString,
 			cache: false,
 			success: function(data) {
-				document.getElementById('msg').innerHTML = data;
+				handleResponse(data);
 			}
 		});		
 }
@@ -227,7 +246,7 @@ function requestMatchInfo()
 			data: dataString,
 			cache: false,
 			success: function(data) {
-				document.getElementById('msg').innerHTML = data;
+				handleResponse(data);
 			}
 		});		
 }
@@ -242,7 +261,7 @@ function requestPlayers()
 			data: dataString,
 			cache: false,
 			success: function(data) {
-				document.getElementById('msg').innerHTML = data;
+				handleResponse(data);
 			}
 		});		
 }

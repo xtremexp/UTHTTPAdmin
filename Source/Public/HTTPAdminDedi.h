@@ -24,6 +24,6 @@ public:
 
 	TSharedPtr<FJsonObject> RequestServerInfo();
 	TSharedPtr<FJsonObject> RequestMatchInfo();
-	TSharedPtr<FJsonObject> RequestPlayers();
+	TArray< TSharedPtr<FJsonValue> > RequestPlayers();
 
 };

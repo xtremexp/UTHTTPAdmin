@@ -127,7 +127,7 @@ bool HTTPAdminDedi::ProcessPost()
 				if (RequestName == "players")
 				{
 					Response->SetStringField("name", RequestName);
-					Response->SetObjectField("data", RequestPlayers()); // Need to pass the data to called method
+					Response->SetArrayField("data", RequestPlayers()); // Need to pass the data to called method
 				}
 
 				// Add this response to the list of responses
@@ -181,25 +181,55 @@ TSharedPtr<FJsonObject> HTTPAdminDedi::RequestServerInfo()
 
 TSharedPtr<FJsonObject> HTTPAdminDedi::RequestMatchInfo()
 {
+	int32 PlayerCount = 0;
+	int32 BotCount = 0;
+	int32 SpecCount = 0;
+
 	TSharedPtr<FJsonObject> MatchInfo = MakeShareable(new FJsonObject);
 
-	MatchInfo->SetStringField(TEXT("map"), GWorld->GetMapName()); // 
-	MatchInfo->SetNumberField(TEXT("timeLimit"), GameMode->TimeLimit ); // GameMode->TimeLimit
-	MatchInfo->SetNumberField(TEXT("timeRemaining"), GameMode->UTGameState->RemainingTime); // GameMode->UTGameState->RemainingTime
-	MatchInfo->SetNumberField(TEXT("teamGame"), GameMode->bTeamGame); // GameMode->bTeamGame
-	MatchInfo->SetStringField(TEXT("state"), UHTTPAdmin::FriendlyMatchState(GameMode->GetMatchState())); // FriendlyMatchState(GameMode->GetMatchState()) // MOVE TO COMMON
-	MatchInfo->SetNumberField(TEXT("hasStarted"), GameMode->HasMatchStarted()); // GameMode->HasMatchStarted()
-	MatchInfo->SetNumberField(TEXT("InProgress"), GameMode->IsMatchInProgress()); // GameMode->IsMatchInProgress()
-	MatchInfo->SetNumberField(TEXT("goalScore"), GameMode->UTGameState->GoalScore); // GameMode->UTGameState->GoalScore
-	MatchInfo->SetNumberField(TEXT("minPlayersToStart"), GameMode->MinPlayersToStart); // GameMode->MinPlayersToStart
+	MatchInfo->SetStringField(TEXT("map"), GWorld->GetMapName());
+	MatchInfo->SetNumberField(TEXT("timeLimit"), GameMode->TimeLimit );
+	MatchInfo->SetNumberField(TEXT("timeRemaining"), GameMode->UTGameState->RemainingTime);
+	MatchInfo->SetNumberField(TEXT("teamGame"), GameMode->bTeamGame);
+	MatchInfo->SetStringField(TEXT("state"), UHTTPAdmin::FriendlyMatchState(GameMode->GetMatchState())); // TODO: Move FriendlyMatchState to common?
+	MatchInfo->SetNumberField(TEXT("hasStarted"), GameMode->HasMatchStarted()); 
+	MatchInfo->SetNumberField(TEXT("InProgress"), GameMode->IsMatchInProgress()); 
+	MatchInfo->SetNumberField(TEXT("goalScore"), GameMode->UTGameState->GoalScore); 
+	MatchInfo->SetNumberField(TEXT("minPlayersToStart"), GameMode->MinPlayersToStart); 
+
+	MatchInfo->SetNumberField(TEXT("maxPlayers"), GameMode->GameSession->MaxPlayers);
+	MatchInfo->SetNumberField(TEXT("maxSpectators"), GameMode->GameSession->MaxSpectators);
+
+	MatchInfo->SetNumberField(TEXT("playerCount"), GameMode->NumPlayers);
+	MatchInfo->SetNumberField(TEXT("botCount"), GameMode->NumBots);
+	MatchInfo->SetNumberField(TEXT("specCount"), GameMode->NumSpectators);
+
 
 	return MatchInfo;
 }
 
-TSharedPtr<FJsonObject> HTTPAdminDedi::RequestPlayers()
+TArray< TSharedPtr<FJsonValue> > HTTPAdminDedi::RequestPlayers()
 {
-	TSharedPtr<FJsonObject> Players = MakeShareable(new FJsonObject);
+	TArray< TSharedPtr<FJsonValue> > Players;
 
+	for (int32 Idx = 0; Idx < GameMode->GameState->PlayerArray.Num(); Idx++)
+	{
+		AUTPlayerState *PS = Cast<AUTPlayerState>(GameMode->GameState->PlayerArray[Idx]);
+		if (PS != nullptr)
+		{
+			TSharedPtr<FJsonObject> Player = MakeShareable(new FJsonObject);
+			Player->SetStringField(TEXT("name"), PS->PlayerName);
+			Player->SetStringField(TEXT("id"), PS->StatsID);
+			Player->SetNumberField(TEXT("isABot"), PS->bIsABot);
+			Player->SetNumberField(TEXT("kills"), PS->Kills);
+			Player->SetNumberField(TEXT("deaths"), PS->Deaths);
+			Player->SetNumberField(TEXT("score"), PS->Score);
+
+
+			Players.AddZeroed();
+			Players[Idx] = MakeShareable(new FJsonValueObject(Player));
+		}
+	}
 
 	//Players->SetArrayField();
 	return Players;
