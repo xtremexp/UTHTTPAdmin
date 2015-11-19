@@ -199,7 +199,6 @@ TSharedPtr<FJsonObject> HTTPAdminDedi::RequestMatchInfo()
 
 	MatchInfo->SetNumberField(TEXT("maxPlayers"), GameMode->GameSession->MaxPlayers);
 	MatchInfo->SetNumberField(TEXT("maxSpectators"), GameMode->GameSession->MaxSpectators);
-
 	MatchInfo->SetNumberField(TEXT("playerCount"), GameMode->NumPlayers);
 	MatchInfo->SetNumberField(TEXT("botCount"), GameMode->NumBots);
 	MatchInfo->SetNumberField(TEXT("specCount"), GameMode->NumSpectators);
