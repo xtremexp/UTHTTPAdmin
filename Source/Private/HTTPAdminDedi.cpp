@@ -63,6 +63,83 @@ bool HTTPAdminDedi::ProcessPost()
 	// Actions e.g. Set map, kick player
 	if (FPaths::GetCleanFilename(URL) == FString(TEXT("action.json")))
 	{
+		// Get the data which was posted
+		FString JsonString = FString(ANSI_TO_TCHAR(conn->content));
+		// We only want the request body
+		JsonString = JsonString.Left((int)conn->content_len);
+
+		TSharedPtr<FJsonObject> JsonObject;
+		TSharedRef<TJsonReader<>> JsonReader = TJsonReaderFactory<>::Create(JsonString);
+
+		// Attempt to decode the JSON string into usable objects
+		FJsonSerializer::Deserialize(JsonReader, JsonObject);
+
+		// Was the decode successful?
+		if (JsonObject.IsValid())
+		{
+			// REF: return json
+			// TODO: move this var to global
+			TSharedPtr<FJsonObject> ReturnJsonObj = MakeShareable(new FJsonObject);
+			TArray<TSharedPtr<FJsonValue>> ResponcesJsonObj;
+			
+			TArray< TSharedPtr<FJsonValue> > ActionList = JsonObject->GetArrayField(TEXT("action"));
+			// loop
+			for (int32 Idx = 0; Idx < ActionList.Num(); Idx++)
+			{
+				// Return
+				TSharedPtr<FJsonObject> Response = MakeShareable(new FJsonObject);
+
+				TSharedPtr<FJsonObject> ActionItem = RequestList[Idx]->AsObject();
+				// Get the request name
+				FString ActionName = ActionItem->GetStringField(TEXT("name"));
+
+				// Get any data which was posted with this request
+				const TArray< TSharedPtr<FJsonValue> >* RequestData;
+				ActionItem->TryGetArrayField(TEXT("data"), RequestData);
+
+				// Action the requests
+
+				if (ActionName == "console")
+				{
+					Response->SetStringField("name", ActionName);
+					Response->SetObjectField("data", ActionConsole()); // Need to pass the data to called method
+				}
+				
+				if (ActionName == "players")
+				{
+					Response->SetStringField("name", ActionName);
+					Response->SetObjectField("data", ActionPlayers()); // Need to pass the data to called method
+				}
+				
+				if (ActionName == "serverInfo")
+				{
+					Response->SetStringField("name", ActionName);
+					Response->SetObjectField("data", ActionServerInfo()); // Need to pass the data to called method
+				}	
+
+				ResponcesJsonObj.AddZeroed();
+				ResponcesJsonObj[Idx] = MakeShareable(new FJsonValueObject(Response));				
+				
+			}
+			// Return
+			ReturnJsonObj->SetStringField(TEXT("servType"), TEXT("dedi"));
+			ReturnJsonObj->SetArrayField(TEXT("response"), ResponcesJsonObj);
+				
+
+			FString OutputString;
+			TSharedRef< TJsonWriter<> > Writer = TJsonWriterFactory<>::Create(&OutputString);
+
+			FJsonSerializer::Serialize(ReturnJsonObj.ToSharedRef(), Writer);
+			ReturnMSG += OutputString;
+
+			return true; // Request has been processed
+		}	
+		else
+		{
+			// Error: request not in the correct format
+			ReturnMSG += "Error: request not in the correct format";
+			return true; // false
+		}
 	}
 
 	//----------------
@@ -72,7 +149,6 @@ bool HTTPAdminDedi::ProcessPost()
 	// Requested information, e.g. Server Name, Current map, players
 	if (FPaths::GetCleanFilename(URL) == FString(TEXT("request.json")))
 	{
-
 		// Get the data which was posted
 		FString JsonString = FString(ANSI_TO_TCHAR(conn->content));
 		// We only want the request body
@@ -92,7 +168,6 @@ bool HTTPAdminDedi::ProcessPost()
 			// TODO: move this var to global
 			TSharedPtr<FJsonObject> ReturnJsonObj = MakeShareable(new FJsonObject);
 			TArray<TSharedPtr<FJsonValue>> ResponcesJsonObj;
-
 
 
 			TArray< TSharedPtr<FJsonValue> > RequestList = JsonObject->GetArrayField(TEXT("request"));
@@ -135,10 +210,9 @@ bool HTTPAdminDedi::ProcessPost()
 				ResponcesJsonObj[Idx] = MakeShareable(new FJsonValueObject(Response));
 
 			}
-
+			// Return
 			ReturnJsonObj->SetStringField(TEXT("servType"), TEXT("dedi"));
 			ReturnJsonObj->SetArrayField(TEXT("response"), ResponcesJsonObj);
-				
 
 			FString OutputString;
 			TSharedRef< TJsonWriter<> > Writer = TJsonWriterFactory<>::Create(&OutputString);
@@ -147,7 +221,6 @@ bool HTTPAdminDedi::ProcessPost()
 			ReturnMSG += OutputString;
 
 			return true; // Request has been processed
-
 		}
 		else
 		{

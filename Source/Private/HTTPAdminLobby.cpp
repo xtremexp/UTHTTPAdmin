@@ -89,7 +89,26 @@ bool HTTPAdminLobby::ProcessPost()
 			//     if method not found
 			//        return status for response
 			// send response to client
+			TArray< TSharedPtr<FJsonValue> > ActionList = JsonObject->GetArrayField(TEXT("action"));
+			
+			for (int32 Idx = 0; Idx < ActionList.Num(); Idx++)
+			{
+				TSharedPtr<FJsonObject> ActionItem = ActionList[Idx]->AsObject();
 
+				FString ActionName = ActionItem->GetStringField(TEXT("name"));
+
+				const TArray< TSharedPtr<FJsonValue> >* RequestData;
+				ActionItem->TryGetArrayField(TEXT("data"), RequestData);
+					
+
+				if (ActionName == "serverInfo")
+				{
+					ReturnMSG += TEXT("{\"name\":\"serverInfo\", \"data\": {}");
+					//ReturnMSG += RequestServerInfo((FJsonValue) RequestData->AsString());
+					ReturnMSG += TEXT("}");
+				}
+
+			}
 		}
 		else
 		{
