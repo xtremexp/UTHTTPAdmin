@@ -6,10 +6,13 @@
 		<link rel="stylesheet" type="text/css" href="css/main.css">
 
 		<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+		<script src="js/web.js"></script>
 		<script src="js/dedi.js"></script>
 		<script src="js/hub.js"></script>
 	
 <script>
+"use strict";
+
 var serverType = "";
 
 $( document ).ready(function() {
@@ -21,15 +24,14 @@ $( document ).ready(function() {
 	// Do we have a valid server type?
 	if (serverType != "" && serverType != "unknown")
 	{
-		// Load the summary page
-		loadPage("summary.html");
-		
-		// Load the menu
-		loadMenu();
+		if (serverType == 'dedi')
+			window.location.replace("dedi/index.html");
+		else
+			window.location.replace("lobby/index.html");
+			
 	} else {
 		// Not a valid server type, display errors
-		$("#nav").html("");
-		$("#content").html("Error: Unkown server type");
+
 	}
 });
 
@@ -50,260 +52,11 @@ function getServerType()
 		}
 	});
 }
-
-/*
-Loads a given page within the server type folder
-if dirRoot is true the given page will be loaded from the directory root
-*/
-function loadPage(page, dirRoot)
-{
-	if (dirRoot === undefined) {
-		dirRoot = false;
-    }
-
-	var fullPath;
-	if (dirRoot)
-		fullPath = page;
-	else
-		fullPath = serverType+"/"+page;
-	
-	$("#content").load(fullPath, function(responseTxt, statusTxt, xhr){
-		//if (statusTxt == "error")
-			//alert("Error: unable to load "+ fullPath);
-	});
-}
-
-/*
-Loads the server type menu
-*/
-function loadMenu()
-{
-	$("#menu").load(serverType+"/menu.html", function(responseTxt, statusTxt, xhr){
-		if (statusTxt == "error")
-			alert("Error: unable to load "+ serverType+"/"+page);			
-	});
-
-}
-
-
-
 </script>
-	
-<script>
-function handleResponse(json)
-{
-	//console.log("Type: "+json['servType']);
-	
-	if (json.response)
-	{
-		console.log("Response from server");
-		for (var i = 0; i < json.response.length; i++)
-		{
-			var response = json.response[i];
-			console.log("For: "+response.name);
-			
-			var functionName = 'process' + json.servType.slice(0,1).toUpperCase() + json.servType.slice(1);
-			functionName += response.name.slice(0,1).toUpperCase() + response.name.slice(1);
-			
-			try 
-			{
-				window[functionName](response.data);
-			} catch(err) {
-				console.log("Unable to find or error with function "+ functionName +" Error:"+ err);
-			}
-		}
-		var date = new Date();
-		document.getElementById('lastUpdate').innerHTML = date.toLocaleTimeString();
-	}
-}
-
-function processDediServerInfo(data)
-{
-	document.getElementById('serverName').innerHTML = data.serverName;
-	document.getElementById('serverMOTD').innerHTML = data.motd;
-	document.getElementById('gameMode').innerHTML = data.gameMode;
-	//document.getElementById('mapRotation').innerHTML = data.mapRotation;
-	
-	//	document.getElementById('maxPlayers').innerHTML = '';
-	//	document.getElementById('maxSpectators').innerHTML = '';
-	console.log("Done processDediServerInfo");
-	return true;
-}
-
-function processDediMatchInfo(data)
-{
-	document.getElementById('mapName').innerHTML = data.map;
-	document.getElementById('timeLimit').innerHTML = timeConvert(data.timeLimit);
-	document.getElementById('timeRemaining').innerHTML = timeConvert(data.timeRemaining);
-	// teamGame
-	document.getElementById('matchState').innerHTML = data.state;
-	// hasStarted
-	// inProgress
-	document.getElementById('goalScore').innerHTML = data.goalScore;
-	// minPlayersToStart
-	
-	document.getElementById('maxPlayers').innerHTML = data.maxPlayers;
-	document.getElementById('maxSpectators').innerHTML = data.maxSpectators;
-	document.getElementById('playerCount').innerHTML = data.playerCount;
-	document.getElementById('botCount').innerHTML = data.botCount;
-	document.getElementById('spectatorCount').innerHTML = data.specCount;
-	
-	console.log("Done processDediMatchInfo");
-	return true;
-}
-
-function processDediPlayers(data)
-{
-	data.sort(function(a, b) {
-    return parseFloat(b.score) - parseFloat(a.score);
-	});
-
-	var html = "<h2>Players</h2>";
-	
-	html += "<table><tr>" +
-	"<th>Name</th>" +
-	"<th>Score</th>" +
-	"<th>Kills</th>" +
-	"<th>Deaths</th>" +
-	"<th>Flag Returns</th>" +
-	"<th>Flag Captures</th>" +
-	"<th>Bot?</th>" +
-	"<th>Kick</th>" +
-	"<th>Ban</th></tr>";
-		
-	for (Player in data)
-	{
-		var PlayerData = data[Player];
-		html += "<tr>";
-		html += "<td><a alt=\""+ PlayerData.id +"\">" + PlayerData.name + "</a></td>";
-		html += "<td>" + PlayerData.score + "</td>";
-		html += "<td>" + PlayerData.kills + "</td>";
-		html += "<td>" + PlayerData.deaths + "</td>";
-		html += "<td>FR</td>";
-		html += "<td>FC</td>";
-		html += "<td>" + (PlayerData.isABot? "Yes" : "") + "</td>";
-
-		if (PlayerData.isABot == 1)
-		{
-			html += "<td></td>";
-			html += "<td></td>";
-		}
-		else
-		{
-			html += "<td><a herf=\"#\" onclick=\"actionPlayerKick('"+ (PlayerData.id? PlayerData.id : PlayerData.name) +"')\">Kick</a></td>";
-			html += "<td><a herf=\"#\" onclick=\"actionPlayerBan('"+ (PlayerData.id? PlayerData.id : PlayerData.name) +"')\">Ban</a></td>";
-		}
-		html +="</tr>";
-	}
-		
-	html += "</table>";	
-	
-	
-	document.getElementById('playerTable').innerHTML = html; 
-	console.log("Done processDediPlayers");
-	return true;
-}
-
-function request()
-{
-	var dataString = '{"request":[{"name":"serverInfo"},{"name":"matchInfo"},{"name":"players", "data":{"sort":"DESC"}}]}';
-	
-	$.ajax({
-		type: "post",
-		url: "/request.json",
-		data: dataString,
-		cache: false,
-		success: function(data) {
-			handleResponse(data);
-		}
-	});	
-
-	
-}
-
-function requestServerInfo()
-{
-	var dataString = '{"request":[{"name":"serverInfo"}]}';
-	
-		$.ajax({
-			type: "post",
-			url: "/request.json",
-			data: dataString,
-			cache: false,
-			success: function(data) {
-				handleResponse(data);
-			}
-		});		
-}
-
-function requestMatchInfo()
-{
-	var dataString = '{"request":[{"name":"matchInfo"}]}';
-	
-		$.ajax({
-			type: "post",
-			url: "/request.json",
-			data: dataString,
-			cache: false,
-			success: function(data) {
-				handleResponse(data);
-			}
-		});		
-}
-
-function requestPlayers()
-{
-	var dataString = '{"request":[{"name":"players"}]}';
-	
-		$.ajax({
-			type: "post",
-			url: "/request.json",
-			data: dataString,
-			cache: false,
-			success: function(data) {
-				handleResponse(data);
-			}
-		});		
-}
-
-function timeConvert(seconds)
-{
-	var date = new Date(1970,0,1);
-    date.setSeconds(seconds);
-    return date.toTimeString().replace(/.*(\d{2}:\d{2}:\d{2}).*/, "$1");
-}
-
-//setInterval(request, 2000);
-//request();
-</script>
-
 	</head>
 	
 	<body>
-		<div id="wrapper">
-		
-			<main>
-				<div id="msg"></div>
-					
-				<div id="content" class="innertube">
-				</div>
-			</main>
-			
-			<nav id="nav">
-				<div class="innertube">
-					<h3>Main</h3>
-					<ul>
-						<li><a href="#">Console</a></li>
-						<li><a href="#">Access Policy</a></li>
-						<li><a href="#">Logout</a></li>
-					</ul>
-				</div>					
-				<div id="menu" class="innertube">
-
-									
-				</div>
-			</nav>
-			
-		</div>
+		<a href="dedi/index.html">Dedi</a><br />
+		<a href="lobby/index.html">Lobby</a><br />
 	</body>
 </html>

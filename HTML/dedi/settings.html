@@ -1,0 +1,101 @@
+					<input type="button" value="Request" onclick="javascript:request()" />
+
+						<h1>Settings</h1>
+						<p> 
+						General<br />
+						<table>
+							<tr>
+								<td>Server Name</td>
+								<td><input type="text" name="serverName" id="serverName" /></td>
+							</tr>
+							<tr>
+								<td>MOTD</td>
+								<td><textarea rows="" cols="" name="serverMOTD" id="serverMOTD"></textarea>
+							</tr>
+							<tr>
+								<td>Description</td>
+								<td><textarea rows="" cols="" name="serverDesc" id="serverDesc"></textarea>
+							</tr>								
+							<tr>
+								<td>Server Password</td>
+								<td><input type="password" name="serverPassword" id="serverPassword"/></td>
+							</tr>
+							<tr>
+								<td>RCON Password</td>
+								<td><input type="password" name="rconPassword" id="rconPassword"/></td>
+							</tr>				
+							<tr>
+								<td>Spectator Password</td>
+								<td><input type="password" name="specPassword" id="specPassword" /></td>
+							</tr>
+							<tr>
+								<td></td>
+								<td><input type="submit" onclick="javascript:actionServerInfo()" /></td>
+							</tr>
+						</table>
+						</p>
+												
+<script>
+request();
+//requestTick = setInterval(request, 2000);
+
+function request()
+{
+	var dataString = '{"request":[{"name":"matchInfo"},{"name":"serverInfo"}]}';
+	
+	$.ajax({
+		type: "post",
+		url: "/request.json",
+		data: dataString,
+		cache: false,
+		success: function(data) {
+			handleResponse(data);
+		}
+	});	
+}
+
+function processMatchInfo(data)
+{
+	//document.getElementById('maxPlayers').innerHTML = data.maxPlayers;
+	//document.getElementById('maxSpectators').innerHTML = data.maxSpectators;
+	//document.getElementById('playerCount').innerHTML = data.playerCount;
+	//document.getElementById('botCount').innerHTML = data.botCount;
+	//document.getElementById('spectatorCount').innerHTML = data.specCount;
+}
+
+function processServerInfo(data)
+{
+	document.getElementById('serverName').value = data.serverName;
+	document.getElementById('serverMOTD').value = data.motd;
+}
+
+function actionServerInfo()
+{
+	var serverName = document.getElementById('serverName').value;
+	var serverMOTD = document.getElementById('serverMOTD').value;
+	var serverDesc = document.getElementById('serverDesc').value;
+	var serverPassword = document.getElementById('serverPassword').value;
+	var rconPassword = document.getElementById('rconPassword').value;
+	var specPassword = document.getElementById('specPassword').value;
+	
+	var dataString = '{"action":[{"name":"serverInfo", "data":{ ';
+	dataString += '"serverName":"'+serverName+'",';
+	dataString += '"serverMOTD":"'+serverMOTD+'",';
+	dataString += '"serverDesc":"'+serverDesc+'",';
+	dataString += '"serverPass":"'+serverPassword+'",';
+	dataString += '"rconPass":"'+rconPassword+'"';
+	dataString += '}}]}';
+	
+	$.ajax({
+		type: "post",
+		url: "/action.json",
+		data: dataString,
+		cache: false,
+		success: function(data) {
+			console.log('Kick response: '+data);
+		}
+	});
+}
+
+
+</script>

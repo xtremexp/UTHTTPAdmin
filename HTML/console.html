@@ -1,0 +1,32 @@
+					<h1>Console</h1>
+					<div id="consoleReturn"></div>
+					
+					<p>
+					<input type="text" id="consoleCmd" /><br />
+					<input type="button" value="Submit" onclick="javascript:actionConsoleCmd()" />
+					</p>
+<script>
+
+function actionConsoleCmd()
+{
+	var consoleCmd = document.getElementById('consoleCmd').value;
+	if (consoleCmd != '') {
+		var dataString = '{"action":[{"name":"console", "data":{"cmd":"'+ consoleCmd +'"}}]}';
+	
+		$.ajax({
+			type: "post",
+			url: "/action.json",
+			data: dataString,
+			cache: false,
+			success: function(data) {
+				handleResponse(data);
+			}
+		});
+	}
+}
+
+function processConsole(data)
+{
+	document.getElementById('consoleReturn').innerHTML = data.output;
+}
+</script>

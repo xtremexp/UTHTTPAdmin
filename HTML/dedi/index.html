@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>HTTP Admin</title>
+		<link rel="stylesheet" type="text/css" href="/css/main.css">
+
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+		<script src="/js/web.js"></script>
+		<script src="/js/dedi.js"></script>
+		<script src="/js/hub.js"></script>
+	
+<script>
+"use strict"
+
+var serverType = "";
+
+$( document ).ready(function() {
+    console.log( "ready!" );
+	
+	// Get the server type
+	getServerType();
+	
+	// Do we have a valid server type?
+	if (serverType != "" && serverType != "unknown")
+	{
+		switch(location.hash) {
+			case '#console':
+				loadPage("console.html", true);
+				break;
+			case '#summary':
+				loadPage("summary.html");
+				break;
+			case '#players':
+				loadPage("players.html");
+				break;
+			case '#settings':
+				loadPage("settings.html");
+				break;
+			default:
+				loadPage("summary.html");
+		}
+		
+	} else {
+		// Not a valid server type, display errors
+		$("#nav").html("");
+		$("#content").html("Error: Unkown server type");
+	}
+});
+
+/*
+Gets the current server type
+*/
+function getServerType()
+{
+	// TODO set a cookie which caches serverType, only request from server after a hour
+	$.ajax({
+		url: "/request.json",
+		type: "GET",
+		cache: false,
+		async: false,
+		timeout: 1000000,
+		success: function(msg){ 
+            serverType = msg.servType.toLowerCase();
+		}
+	});
+}
+
+/*
+Loads a given page within the server type folder
+if dirRoot is true the given page will be loaded from the directory root
+*/
+function loadPage(page, dirRoot)
+{
+	if (dirRoot === undefined) {
+		dirRoot = false;
+    }
+
+	var fullPath;
+	if (dirRoot)
+		fullPath = '/'+page;
+	else
+		fullPath = '/'+serverType+'/'+page;
+	
+	clearInterval(requestTick);
+	
+	$("#content").load(fullPath, function(responseTxt, statusTxt, xhr){
+		//if (statusTxt == "error")
+			//alert("Error: unable to load "+ fullPath);
+	});
+}
+
+function handleResponse(json)
+{
+	if (json.response)
+	{
+		console.log("Response from server");
+		for (var i = 0; i < json.response.length; i++)
+		{
+			var response = json.response[i];
+			console.log("For: "+response.name);
+			
+			//var functionName = 'process' + json.servType.slice(0,1).toUpperCase() + json.servType.slice(1);
+			var functionName = 'process';
+			functionName += response.name.slice(0,1).toUpperCase() + response.name.slice(1);
+			
+			try {
+				window[functionName](response.data);
+			} catch(err) {
+				console.log("Unable to find or error with function "+ functionName +" Error:"+ err);
+			}
+		}
+		// catch any errors if there is no lastUpdate field
+		try {
+			var date = new Date();
+			document.getElementById('lastUpdate').innerHTML = date.toLocaleTimeString();
+		} catch(err) {
+		
+		}
+	}
+}
+
+function timeConvert(seconds)
+{
+	var date = new Date(1970,0,1);
+    date.setSeconds(seconds);
+    return date.toTimeString().replace(/.*(\d{2}:\d{2}:\d{2}).*/, "$1");
+}
+
+var requestTick;
+
+//setInterval(request, 2000);
+//request();
+
+</script>
+	
+<script>
+function requestServerInfo()
+{
+	var dataString = '{"request":[{"name":"serverInfo"}]}';
+	
+		$.ajax({
+			type: "post",
+			url: "/request.json",
+			data: dataString,
+			cache: false,
+			success: function(data) {
+				handleResponse(data);
+			}
+		});		
+}
+
+function requestMatchInfo()
+{
+	var dataString = '{"request":[{"name":"matchInfo"}]}';
+	
+		$.ajax({
+			type: "post",
+			url: "/request.json",
+			data: dataString,
+			cache: false,
+			success: function(data) {
+				handleResponse(data);
+			}
+		});		
+}
+
+function requestPlayers()
+{
+	var dataString = '{"request":[{"name":"players"}]}';
+	
+		$.ajax({
+			type: "post",
+			url: "/request.json",
+			data: dataString,
+			cache: false,
+			success: function(data) {
+				handleResponse(data);
+			}
+		});		
+}
+
+</script>
+	</head>
+	
+	<body>
+		<div id="wrapper">
+		
+			<main>
+				<div id="msg"></div>
+					
+				<div id="content" class="innertube">
+				</div>
+			</main>
+			
+			<nav id="nav">
+				<div class="innertube">
+					<h3>Main</h3>
+					<ul>
+						<li><a href="#console" onclick="javascript:loadPage('console.html', true)">Console</a></li>
+						<li><a href="#">Access Policy</a></li>
+						<li><a href="#">Logout</a></li>
+					</ul>
+				</div>					
+				<div id="menu" class="innertube">
+					<h3>Dedi</h3>
+					<ul>
+						<li><a href="#summary" onclick="javascript:loadPage('summary.html')">Summary</a></li>
+						<li><a href="#players" onclick="javascript:loadPage('players.html')">Players</a></li>
+						<li><a href="#settings" onclick="javascript:loadPage('settings.html')">Settings</a></li>
+						<li><a href="#">Mutators</a></li>
+					</ul>
+
+					<input type="button" onclick="clearInterval(requestTick)" value="Stop Request">
+				</div>
+			</nav>			
+		</div>
+	</body>
+</html>

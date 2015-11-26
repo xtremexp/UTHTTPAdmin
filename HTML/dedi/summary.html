@@ -1,11 +1,3 @@
-					<form method="POST" action="action.json">
-					<label for="consolecommand">Console command: </label>
-					<input type="text" name="consolecommand" value="" />
-					<input type="submit" />
-					</form>
-					<input type="button" value="Request" onclick="javascript:request()" />
-					</div>
-					
 						<h1>Summary</h1>
 						<p> Server Name: <span id="serverName"></span></p>
 						<p> Message of the day <span id="serverMOTD"></span></p>
@@ -16,7 +8,7 @@
 
 						<table border="1" width="100%">
 							<tr>
-								<td width="25%"> <p>Map Img</p> </td>
+								<td width="25%"> <img src="/img/maps/nodata.jpg" id="mapImg" /> </td>
 								<td> 
 									<p><small>Last Updated: <span id="lastUpdate"></span></small></p>
 									<p>Map Name: <span id="mapName"></span> <br />Game Mode: <span id="gameMode"></span></p>
@@ -34,3 +26,122 @@
 						</table>
 						
 						<div id="playerTable"></div>
+					
+<script>
+request();
+requestTick = setInterval(request, 2000);
+var mapName = 'nodata';
+function request()
+{
+	var dataString = '{"request":[{"name":"serverInfo"},{"name":"matchInfo"},{"name":"players", "data":{"sort":"DESC"}}]}';
+	
+	$.ajax({
+		type: "post",
+		url: "/request.json",
+		data: dataString,
+		cache: false,
+		success: function(data) {
+			handleResponse(data);
+		}
+	});	
+}
+
+function processServerInfo(data)
+{
+	document.getElementById('serverName').innerHTML = data.serverName;
+	document.getElementById('serverMOTD').innerHTML = data.motd;
+	document.getElementById('gameMode').innerHTML = data.gameMode;
+	//document.getElementById('mapRotation').innerHTML = data.mapRotation;
+	
+	//	document.getElementById('maxPlayers').innerHTML = '';
+	//	document.getElementById('maxSpectators').innerHTML = '';
+	console.log("Done processDediServerInfo");
+	return true;
+}
+
+function processMatchInfo(data)
+{
+	if (data.map != mapName) {
+		$.get(
+			'/img/maps/'+data.map+'.jpg',
+			function(redata, status, jqXHR) {
+				console.log(redata);
+				if (status == 'success') 
+					document.getElementById('mapImg').src = '/img/maps/'+data.map+'.jpg';
+				else
+					document.getElementById('mapImg').src = '/img/maps/nodata.jpg';
+			}
+		);
+		mapName = data.map;
+	}
+	document.getElementById('mapName').innerHTML = data.map;
+	document.getElementById('timeLimit').innerHTML = timeConvert(data.timeLimit);
+	document.getElementById('timeRemaining').innerHTML = timeConvert(data.timeRemaining);
+	// teamGame
+	document.getElementById('matchState').innerHTML = data.state;
+	// hasStarted
+	// inProgress
+	document.getElementById('goalScore').innerHTML = data.goalScore;
+	// minPlayersToStart
+	
+	document.getElementById('maxPlayers').innerHTML = data.maxPlayers;
+	document.getElementById('maxSpectators').innerHTML = data.maxSpectators;
+	document.getElementById('playerCount').innerHTML = data.playerCount;
+	document.getElementById('botCount').innerHTML = data.botCount;
+	document.getElementById('spectatorCount').innerHTML = data.specCount;
+	
+	console.log("Done processDediMatchInfo");
+	return true;
+}
+
+function processPlayers(data)
+{
+	data.sort(function(a, b) {
+    return parseFloat(b.score) - parseFloat(a.score);
+	});
+
+	var html = "<h2>Players</h2>";
+	
+	html += "<table><tr>" +
+	"<th>Name</th>" +
+	"<th>Score</th>" +
+	"<th>Kills</th>" +
+	"<th>Deaths</th>" +
+	"<th>Flag Returns</th>" +
+	"<th>Flag Captures</th>" +
+	"<th>Bot?</th>" +
+	"<th>Kick</th>" +
+	"<th>Ban</th></tr>";
+		
+	for (Player in data)
+	{
+		var PlayerData = data[Player];
+		html += "<tr>";
+		html += "<td><a alt=\""+ PlayerData.id +"\">" + PlayerData.name + "</a></td>";
+		html += "<td>" + PlayerData.score + "</td>";
+		html += "<td>" + PlayerData.kills + "</td>";
+		html += "<td>" + PlayerData.deaths + "</td>";
+		html += "<td>FR</td>";
+		html += "<td>FC</td>";
+		html += "<td>" + (PlayerData.isABot? "Yes" : "") + "</td>";
+
+		if (PlayerData.isABot == 1)
+		{
+			html += "<td></td>";
+			html += "<td></td>";
+		}
+		else
+		{
+			html += "<td><a herf=\"#\" onclick=\"actionPlayerKick('"+ (PlayerData.id? PlayerData.id : PlayerData.name) +"')\">Kick</a></td>";
+			html += "<td><a herf=\"#\" onclick=\"actionPlayerBan('"+ (PlayerData.id? PlayerData.id : PlayerData.name) +"')\">Ban</a></td>";
+		}
+		html +="</tr>";
+	}
+		
+	html += "</table>";	
+	
+	document.getElementById('playerTable').innerHTML = html; 
+	console.log("Done processDediPlayers");
+	return true;
+}
+</script>

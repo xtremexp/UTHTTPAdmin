@@ -1,0 +1,117 @@
+					<input type="button" value="Request" onclick="javascript:request()" />
+					
+						<h1>Players</h1>
+						<p><small>Last Updated: <span id="lastUpdate"></span></small></p>
+						<p> 
+						Players: <span id="playerCount">0</span> (<span id="botCount">0</span>  bots) / <span id="maxPlayers">0</span><br />
+						Spectators: <span id="spectatorCount">0</span>/<span id="maxSpectators">0</span>
+						</p>
+												
+						<div id="playerTable"></div>
+<script>
+request();
+requestTick = setInterval(request, 2000);
+
+function request()
+{
+	var dataString = '{"request":[{"name":"matchInfo"},{"name":"players"}]}';
+	
+	$.ajax({
+		type: "post",
+		url: "/request.json",
+		data: dataString,
+		cache: false,
+		success: function(data) {
+			handleResponse(data);
+		}
+	});	
+}
+
+function processMatchInfo(data)
+{
+	document.getElementById('maxPlayers').innerHTML = data.maxPlayers;
+	document.getElementById('maxSpectators').innerHTML = data.maxSpectators;
+	document.getElementById('playerCount').innerHTML = data.playerCount;
+	document.getElementById('botCount').innerHTML = data.botCount;
+	document.getElementById('spectatorCount').innerHTML = data.specCount;
+}
+
+function processPlayers(data)
+{
+	data.sort(function(a, b) {
+    return parseFloat(b.score) - parseFloat(a.score);
+	});
+
+	var html = "";
+	
+	html += "<table><tr>" +
+	"<th>Name</th>" +
+	"<th>Score</th>" +
+	"<th>Kills</th>" +
+	"<th>Deaths</th>" +
+	"<th>Flag Returns</th>" +
+	"<th>Flag Captures</th>" +
+	"<th>Bot?</th>" +
+	"<th>Action</th></tr>";
+		
+	for (Player in data)
+	{
+		var PlayerData = data[Player];
+		html += "<tr>";
+		html += "<td><a alt=\""+ PlayerData.id +"\">" + PlayerData.name + "</a></td>";
+		html += "<td>" + PlayerData.score + "</td>";
+		html += "<td>" + PlayerData.kills + "</td>";
+		html += "<td>" + PlayerData.deaths + "</td>";
+		html += "<td>FR</td>";
+		html += "<td>FC</td>";
+		html += "<td>" + (PlayerData.isABot? "Yes" : "") + "</td>";
+
+		if (PlayerData.isABot == 0)
+		{
+			html += "<td></td>";
+		}
+		else
+		{
+			html += "<td><a herf=\"#players\" onclick=\"actionPlayerKick('"+ (PlayerData.id? PlayerData.id : PlayerData.name) +"')\">Kick</a> <br /> <a herf=\"#players\" onclick=\"actionPlayerBan('"+ (PlayerData.id? PlayerData.id : PlayerData.name) +"')\">Ban</a></td>";
+		}
+		html +="</tr>";
+	}
+		
+	html += "</table>";	
+		
+	document.getElementById('playerTable').innerHTML = html; 
+	console.log("Done processDediPlayers");
+	return true;
+}
+
+
+function actionPlayerKick(idOrName)
+{
+	var dataString = '{"action":[{"name":"players", "data":{"kick":"'+idOrName+'", "reason":"Bad User"}}]}';
+	
+	$.ajax({
+		type: "post",
+		url: "/action.json",
+		data: dataString,
+		cache: false,
+		success: function(data) {
+			console.log('Kick response: '+data);
+		}
+	});
+}
+
+function actionPlayerBan(idOrName)
+{
+	var dataString = '{"action":[{"name":"players", "data":{"kick":"'+idOrName+'", "reason":"Bad User"}}]}';
+	
+	$.ajax({
+		type: "post",
+		url: "/action.json",
+		data: dataString,
+		cache: false,
+		success: function(data) {
+			console.log('Ban response: '+data);
+		}
+	});
+}
+</script>
