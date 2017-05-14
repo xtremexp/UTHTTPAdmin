@@ -89,32 +89,32 @@ bool HTTPAdminDedi::ProcessPost()
 				// Return
 				TSharedPtr<FJsonObject> Response = MakeShareable(new FJsonObject);
 
-				TSharedPtr<FJsonObject> ActionItem = RequestList[Idx]->AsObject();
+				//TSharedPtr<FJsonObject> ActionItem = RequestList[Idx]->AsObject(); // XTXP - FIXME
 				// Get the request name
-				FString ActionName = ActionItem->GetStringField(TEXT("name"));
+				FString ActionName = "serverInfo";// ActionItem->GetStringField(TEXT("name"));
 
 				// Get any data which was posted with this request
-				const TArray< TSharedPtr<FJsonValue> >* RequestData;
-				ActionItem->TryGetArrayField(TEXT("data"), RequestData);
+				//const TArray< TSharedPtr<FJsonValue> >* RequestData;
+				//ActionItem->TryGetArrayField(TEXT("data"), RequestData);
 
 				// Action the requests
 
 				if (ActionName == "console")
 				{
 					Response->SetStringField("name", ActionName);
-					Response->SetObjectField("data", ActionConsole()); // Need to pass the data to called method
+					//Response->SetObjectField("data", ActionConsole()); // Need to pass the data to called method XTXP - Non existing method
 				}
 				
 				if (ActionName == "players")
 				{
 					Response->SetStringField("name", ActionName);
-					Response->SetObjectField("data", ActionPlayers()); // Need to pass the data to called method
+					//Response->SetObjectField("data", ActionPlayers()); // Need to pass the data to called method XTXP - Non existing method
 				}
 				
 				if (ActionName == "serverInfo")
 				{
 					Response->SetStringField("name", ActionName);
-					Response->SetObjectField("data", ActionServerInfo()); // Need to pass the data to called method
+					//Response->SetObjectField("data", ActionServerInfo()); // Need to pass the data to called method XTXP - Non existing method
 				}	
 
 				ResponcesJsonObj.AddZeroed();
@@ -257,18 +257,19 @@ TSharedPtr<FJsonObject> HTTPAdminDedi::RequestMatchInfo()
 	int32 PlayerCount = 0;
 	int32 BotCount = 0;
 	int32 SpecCount = 0;
+	int32 MinPlayersToStart = 1; // XTXP always 1 since some previous version
 
 	TSharedPtr<FJsonObject> MatchInfo = MakeShareable(new FJsonObject);
 
 	MatchInfo->SetStringField(TEXT("map"), GWorld->GetMapName());
 	MatchInfo->SetNumberField(TEXT("timeLimit"), GameMode->TimeLimit );
-	MatchInfo->SetNumberField(TEXT("timeRemaining"), GameMode->UTGameState->RemainingTime);
+	MatchInfo->SetNumberField(TEXT("timeRemaining"), GameMode->UTGameState->GetRemainingTime());
 	MatchInfo->SetNumberField(TEXT("teamGame"), GameMode->bTeamGame);
 	MatchInfo->SetStringField(TEXT("state"), UHTTPAdmin::FriendlyMatchState(GameMode->GetMatchState())); // TODO: Move FriendlyMatchState to common?
 	MatchInfo->SetNumberField(TEXT("hasStarted"), GameMode->HasMatchStarted()); 
 	MatchInfo->SetNumberField(TEXT("InProgress"), GameMode->IsMatchInProgress()); 
 	MatchInfo->SetNumberField(TEXT("goalScore"), GameMode->UTGameState->GoalScore); 
-	MatchInfo->SetNumberField(TEXT("minPlayersToStart"), GameMode->MinPlayersToStart); 
+	MatchInfo->SetNumberField(TEXT("minPlayersToStart"), MinPlayersToStart);
 
 	MatchInfo->SetNumberField(TEXT("maxPlayers"), GameMode->GameSession->MaxPlayers);
 	MatchInfo->SetNumberField(TEXT("maxSpectators"), GameMode->GameSession->MaxSpectators);

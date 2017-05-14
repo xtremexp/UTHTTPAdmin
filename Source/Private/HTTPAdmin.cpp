@@ -16,7 +16,7 @@ UHTTPAdmin::UHTTPAdmin(const FObjectInitializer& ObjectInitializer)
 void UHTTPAdmin::Init()
 {
 	// Don't garbage collect me
-	SetFlags(RF_RootSet);
+	SetFlags(RF_MarkAsRootSet);
 
 	CombinedAuth = User + TEXT(":") + Password;
 
@@ -206,19 +206,19 @@ FString UHTTPAdmin::PrepareAdminJSON()
 		JSON += TEXT("\"mapname\":\"") + GWorld->GetMapName() + TEXT("\",");
 
 		JSON += TEXT("\"maprotation\":[");
-		for (int i = 0; i < GameMode->MapRotation.Num(); i++)
+		for (int i = 0; i < GameMode->UTGameState->MapVoteList.Num(); i++)
 		{
 			if (i != 0)
 			{
 				JSON += TEXT(",");
 			}
-			JSON += TEXT("\"") + GameMode->MapRotation[i] + TEXT("\"");
+			JSON += TEXT("\"") + GameMode->UTGameState->MapVoteList[i]->MapPackageName + TEXT("\"");
 		}
 		JSON += TEXT("],");
 
 		
 		JSON += TEXT("\"timelimit\":") + FString::FromInt(GameMode->TimeLimit) + TEXT(",");
-		JSON += TEXT("\"timeremaining\":") + FString::FromInt(GameMode->UTGameState->RemainingTime) + TEXT(",");
+		JSON += TEXT("\"timeremaining\":") + FString::FromInt(GameMode->UTGameState->GetRemainingTime()) + TEXT(",");
 
 		JSON += TEXT("\"teamGame\":") + FString::FromInt(GameMode->bTeamGame) + TEXT(",");
 
@@ -228,7 +228,7 @@ FString UHTTPAdmin::PrepareAdminJSON()
 		JSON += TEXT("\"IsMatchInProgress\":") + FString::FromInt(GameMode->IsMatchInProgress()) + TEXT(",");
 		
 
-		JSON += TEXT("\"minPlayerToStart\":") + FString::FromInt(GameMode->MinPlayersToStart) + TEXT(",");
+		JSON += TEXT("\"minPlayerToStart\": 1,"); // XTXP: always 1 now since some previous UT version
 		
 		JSON += TEXT("\"goalscore\":") + FString::FromInt(GameMode->UTGameState->GoalScore) + TEXT(",");
 
@@ -387,14 +387,14 @@ FString UHTTPAdmin::FriendlyMatchState(FName MatchState)
 	if (MatchState == MatchState::MatchIntermission) // The game is in a round intermission
 		return FString(TEXT("Intermission"));
 
-	// UT CTF
-	if (MatchState == MatchState::MatchEnteringHalftime) // CTF game entering half time
-		return FString(TEXT("Entering Half Time"));
+	// XTXP - some old states no longer existing
+	//if (MatchState == MatchState::MatchEnteringHalftime) // CTF game entering half time
+		//return FString(TEXT("Entering Half Time"));
 
-	if (MatchState == MatchState::MatchIsAtHalftime) // CTF game at half time
-		return FString(TEXT("At Half Time"));
+	//if (MatchState == MatchState::MatchIsAtHalftime) // CTF game at half time
+		//return FString(TEXT("At Half Time"));
 
-	if (MatchState == MatchState::MatchExitingHalftime) // CTF game half time eneded
+	if (MatchState == MatchState::MatchExitingIntermission) // CTF game half time eneded
 		return FString(TEXT("Exiting Half Time"));
 
 	return FString(TEXT("Unknown"));

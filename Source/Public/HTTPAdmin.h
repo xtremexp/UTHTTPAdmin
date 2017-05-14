@@ -3,7 +3,7 @@
 
 #include "Core.h"
 #include "UnrealTournament.h"
-#include "UTCTFGameMode.h"
+#include "UTGameMode.h"
 #include "Json.h"
 
 // include Mongoose, issues with DWORD
